@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8"><title>ระบบจัดการตารางวิทยากร</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f5ff;--card:#fff;--tx:#14172b;--mu:#6a7090;--pr:#5b5ff0;--bd:#e4e6f5;--ac:#eceeff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0f1c;--card:#171a2e;--tx:#e8eaf8;--mu:#9aa0c3;--pr:#8b8fff;--bd:#2a2e4a;--ac:#232749}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 "Anuphan","Noto Sans Thai",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--bd)}
+h1{font-size:17px;margin:0 auto 0 0;color:var(--pr)}nav{display:flex;gap:6px;flex-wrap:wrap}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 11px}
+button{cursor:pointer}button.p{background:var(--pr);color:#fff;border-color:var(--pr)}nav button.on{background:var(--ac);border-color:var(--pr);color:var(--pr)}
+main{max-width:1100px;margin:0 auto;padding:16px}.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}label{display:block;font-size:13px;color:var(--mu)}label input,label select,label textarea{width:100%;margin-top:3px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal .d{min-height:74px;border:1px solid var(--bd);border-radius:8px;padding:4px;cursor:pointer;font-size:12px;overflow:hidden}
+.cal .h{text-align:center;color:var(--mu);font-size:12px}.cal .t{background:var(--ac);border-radius:4px;margin-top:2px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--pr)}
+.cal .sel{outline:2px solid var(--pr)}.kpi{font-size:28px;font-weight:700;color:var(--pr)}.bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px}.bar i{display:block;height:14px;background:var(--pr);border-radius:4px;min-width:2px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left;vertical-align:top}.mu{color:var(--mu);font-size:13px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{padding:8px 12px;border-radius:8px;background:var(--ac);color:var(--pr);margin:8px 0}.hide{display:none}
+.card{border-radius:18px;border:0}.ct{display:block;font-size:16px;margin-bottom:10px}.grid3{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-bottom:14px}.grid3 .card{margin:0}
+.stk{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:18px 0 14px;background:var(--bd)}.stk i{display:block}.lg{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px}.lg div{display:flex;align-items:center;gap:6px;min-width:0}.lg u{width:11px;height:11px;border-radius:3px;flex:none}.lg span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.pg{margin:8px 0}.pl{display:flex;justify-content:space-between;font-size:13px;gap:8px}.pl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pt{height:16px;border-radius:8px;background:var(--bd);overflow:hidden;margin-top:3px}.pt i{display:block;height:100%;border-radius:8px}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:24px}@media(max-width:700px){.two{grid-template-columns:1fr}}.kp{display:flex;flex-wrap:wrap;gap:6px 28px}.big{font-size:30px;font-weight:700;color:var(--mu);line-height:1.2}.kp small,.sub{color:var(--mu);font-size:12px;letter-spacing:.3px}.pc{display:flex;gap:22px}.pc span{font-size:28px;font-weight:700;color:var(--mu)}.pc small{display:block;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li{border-bottom:1px solid var(--bd);padding:7px 0;font-size:13px}.li span{color:var(--mu)}
+
+body{background:radial-gradient(900px 420px at 8% -8%,rgba(99,102,241,.20),transparent 70%),radial-gradient(700px 380px at 96% 0,rgba(6,182,212,.16),transparent 70%),var(--bg);background-attachment:fixed;letter-spacing:.1px}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--card) 82%,transparent);border-bottom:1px solid var(--bd);padding:10px 20px}
+h1{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;color:var(--tx)}h1 small{display:block;font-size:11px;font-weight:500;letter-spacing:.3px;font-weight:600;line-height:1.35;background:linear-gradient(90deg,#6366f1,#06b6d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lgo{display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:18px;box-shadow:0 6px 16px rgba(99,102,241,.35)}
+nav{background:var(--ac);padding:4px;border-radius:999px}nav button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-weight:500;color:var(--mu);transition:.15s}nav button:hover{color:var(--tx)}nav button.on{background:var(--card);color:var(--pr);box-shadow:0 2px 8px rgba(80,84,200,.18)}
+button,select,input,textarea{border-radius:12px;transition:border-color .15s,box-shadow .15s,transform .1s}button:active{transform:scale(.97)}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--pr);box-shadow:0 0 0 3px color-mix(in srgb,var(--pr) 25%,transparent)}
+button.p{background:linear-gradient(135deg,#6366f1,#06b6d4);border:0;color:#fff;font-weight:600;box-shadow:0 6px 16px rgba(99,102,241,.3)}button.p:hover{filter:brightness(1.07)}
+.card{box-shadow:0 1px 2px rgba(20,23,43,.04),0 10px 30px rgba(80,84,200,.08);border-radius:20px}h3{font-weight:700;margin-top:0}
+.cal .d{border-radius:14px;transition:.15s;background:var(--card)}.cal .d:hover{border-color:var(--pr);transform:translateY(-2px);box-shadow:0 6px 16px rgba(99,102,241,.15)}
+.cal .d b{font-family:"Space Grotesk","Anuphan",sans-serif}.cal .today b{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:999px;background:var(--pr);color:#fff}
+.cal .t{background:linear-gradient(90deg,#6366f1,#06b6d4);color:#fff;border-radius:6px;padding:1px 6px}.cal .sel{outline:2px solid var(--pr);background:var(--ac)}
+.kpi,.big,.pc span{font-family:"Space Grotesk","Anuphan",sans-serif;background:linear-gradient(135deg,#6366f1,#06b6d4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pt,.stk{background:rgba(125,132,175,.22)}th{font-weight:600;color:var(--mu);font-size:12px;letter-spacing:.4px}
+tr:hover td{background:var(--ac)}#rep .big,#rep .pc span,#rep .kpi{background:none;color:var(--pr);-webkit-background-clip:border-box;background-clip:border-box}.msg{border-radius:12px;border:1px solid color-mix(in srgb,var(--pr) 30%,transparent)}
+.mdl{position:fixed;inset:0;background:rgba(10,12,30,.55);display:grid;place-items:center;z-index:50;padding:16px}.mb{background:var(--card);border-radius:18px;padding:20px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+
+:root{--bg:#eef1f7}@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0f1c}}
+body{background:var(--bg)}#app{display:flex;min-height:100%}#mw{flex:1;min-width:0}main{max-width:1200px}
+#side{width:268px;flex:none;background:#111827;color:#cbd5e1;display:flex;flex-direction:column;padding:18px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;transition:margin .2s}
+body.nosb #side{margin-left:-268px}
+.brand{display:flex;gap:10px;align-items:center;color:#fff;font-weight:700;font-size:15px;line-height:1.25}.brand small{display:block;font-weight:400;font-size:10.5px;color:#94a3b8;margin-top:3px;line-height:1.4}
+#who{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;margin:24px 0 8px}.av{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#06b6d4);display:grid;place-items:center;color:#fff;font-size:28px;font-weight:700;margin-bottom:8px;box-shadow:0 0 0 4px rgba(255,255,255,.08)}#who b{color:#fff;font-size:14px}#who small{color:#94a3b8;font-size:12px;word-break:break-all}
+.grp{margin:18px 6px 6px;font-size:11px;font-weight:700;letter-spacing:.8px;color:#818cf8}.grp small{display:block;font-weight:400;color:#64748b;letter-spacing:0;font-size:11px;margin-top:1px}
+.ni{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;color:#cbd5e1;padding:10px 12px;border-radius:10px;margin:2px 0;font-weight:500;box-shadow:none}.ni span{width:22px;text-align:center}.ni em{margin-left:auto;font-style:normal;font-size:11px;opacity:.7}.ni:hover{background:rgba(255,255,255,.06)}.ni.on{background:rgba(255,255,255,.11);color:#fff}
+.sbf{margin-top:auto;padding-top:18px;font-size:11px;color:#64748b;text-align:center}
+#top{display:flex;align-items:center;gap:12px;padding:12px 24px;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}#top b{font-size:16px}
+#hb{border:0;background:transparent;font-size:20px;padding:4px 10px;box-shadow:none}#lg{border:0;border-radius:999px;background:#4f46e5;color:#fff;font-weight:600;padding:8px 18px;box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.hero{display:flex;align-items:center;gap:14px;margin:4px 0 20px}.hero h2{margin:0;font-size:26px;font-weight:700;line-height:1.25}.hav{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#06b6d4);display:grid;place-items:center;color:#fff;font-size:22px;flex:none}
+.kpis{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:14px}.kc{background:var(--card);border-radius:18px;padding:16px 16px 14px;text-align:center;box-shadow:0 1px 2px rgba(20,23,43,.04),0 10px 30px rgba(80,84,200,.08)}
+.kt{text-align:left;font-weight:600;font-size:14px}.kc .n{font-family:"Space Grotesk","Anuphan",sans-serif;font-size:60px;font-weight:700;line-height:1.1;margin-top:8px}.kl{font-weight:600;font-size:15px}.kf{margin-top:14px;padding-top:10px;border-top:1px solid var(--bd);font-size:12px;color:var(--mu)}.kf b{color:var(--tx)}
+.ov{display:none}
+@media(max-width:900px){#side{position:fixed;left:0;top:0;bottom:0;z-index:30;transform:translateX(-100%);transition:transform .2s;padding-top:calc(18px + env(safe-area-inset-top,0px));margin-left:0!important}body.sbo #side{transform:none}body.sbo .ov{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20}#top{padding:10px 14px}#dt{display:none}main{padding:12px}.hero h2{font-size:21px}}
+.pop{max-width:600px;max-height:85vh;overflow:auto}
+.fbr{border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.grid3{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.cols{display:flex;gap:6px;align-items:flex-end;justify-content:center;overflow-x:auto}.col{flex:1 1 0;max-width:90px;min-width:26px;display:flex;flex-direction:column;align-items:center}.cv{font-size:12px;font-weight:700;margin-bottom:3px}.cb{width:100%;height:140px;display:flex;align-items:flex-end;border-bottom:1px solid var(--bd)}.cb i{display:block;width:100%;border-radius:6px 6px 0 0}.cl{font-size:11px;color:var(--mu);margin-top:5px;text-align:center;line-height:1.25}.cl small{font-size:10px}
+.dgrid{display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.dn{text-align:center}.dw{position:relative;width:130px;margin:8px auto 10px}.dc{position:absolute;top:0;left:0;right:0;bottom:0;display:grid;place-items:center;font-size:24px;font-weight:700;font-family:"Space Grotesk","Anuphan",sans-serif}
+.lg1 div{display:flex;gap:6px;align-items:center;font-size:12px;margin:3px 0;text-align:left}.lg1 span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lg1 u{width:11px;height:11px;border-radius:3px;flex:none}
+.dx,.dp{border:0;color:#fff;font-weight:600;padding:8px 16px}.dx{background:#16a34a;box-shadow:0 4px 12px rgba(22,163,74,.3)}.dp{background:#dc2626;box-shadow:0 4px 12px rgba(220,38,38,.3)}.dx:hover,.dp:hover{filter:brightness(1.08)}
+</style></head><body>
+<div id="app"><aside id="side">
+<div class="brand"><span class="lgo">✦</span><span>ระบบจัดการตารางวิทยากร<small>RUN SKILL &amp; Ref.Lib. &amp; AI Clinic สำนักหอสมุด มหาวิทยาลัยขอนแก่น</small></span></div>
+<div id="who"></div><div id="nav"></div><div class="sbf">สำนักหอสมุด มหาวิทยาลัยขอนแก่น</div></aside>
+<div class="ov" onclick="toggleSb()"></div>
+<div id="mw"><div id="top"><button id="hb" onclick="toggleSb()" aria-label="เมนู">☰</button><b id="pt"></b><span style="flex:1"></span><span class="mu" id="dt"></span><button id="lg"></button></div>
+<main id="m"></main></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],TD=['อา','จ','อ','พ','พฤ','ศ','ส'];
+let formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',from:'',to:''};
+const MF=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TODAY=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const fd=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+dd} ${TM[m-1]} ${+y+543}`};
+const sha=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+function setMsg(t){msg=t;render()}
+async function init(){
+ try{db=await claude.use('db');assets=await claude.use('assets');sample=await claude.use('sample');dl=await claude.use('downloads')}catch(e){}
+ if(db){try{db.collection('events').onSnapshot(s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));render()});
+  db.collection('admins').onSnapshot(s=>{admins=s.docs.map(d=>({id:d.id,...d.data()}));render()});
+  db.collection('speakers').onSnapshot(s=>{speakers=s.docs.map(d=>({id:d.id,...d.data()}));render()});
+  db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;render()})}catch(e){}}
+ render()}
+function render(){
+ $('#nav').innerHTML=`<div class="grp">ภาพรวม<small>ปฏิทินและสรุปข้อมูล</small></div>${nb('cal','📅','ปฏิทิน')}${nb('dash','📊','Dashboard')}<div class="grp">จัดการ<small>แอดมินและวิทยากร</small></div>${nb('form','📝','จัดการอบรม',1)}${me&&me.role!=='admin'?'':`<div class="grp">ผู้ดูแลระบบ<small>เฉพาะแอดมิน</small></div>${nb('spk','🎤','จัดการวิทยากร',1)}${nb('adm','👥','จัดการแอดมิน',1)}${nb('fb','🛠','แก้ไขแบบฟอร์ม',1)}`}`;
+ $('#who').innerHTML=me?`<div class="av">${esc((me.firstName||'?')[0])}${esc((me.lastName||'')[0]||'')}</div><b>${esc(me.firstName)} ${esc(me.lastName)}</b><small>${me.role==='admin'?'แอดมิน':'วิทยากร'} · ${esc(me.email)}</small>`:`<div class="av">👤</div><b>ผู้เยี่ยมชม</b><small>ดูปฏิทินและสรุปข้อมูล</small>`;$('#dt').textContent=fd(TODAY());$('#lg').textContent=me?'ออกจากระบบ':'เข้าสู่ระบบ';$('#lg').onclick=me?()=>{me=null;tab='cal';render()}:()=>{tab='login';render()};
+ const adT=tab==='adm'||tab==='spk'||tab==='fb';if(me&&me.role!=='admin'&&adT){tab='cal';msg='เมนูนี้สำหรับแอดมินเท่านั้น'}const need=(tab==='form'||adT)&&!me;if(need)tab='login';$('#pt').textContent={cal:'ปฏิทินกิจกรรม',dash:'Dashboard',form:'จัดการอบรม',adm:'จัดการแอดมิน',spk:'จัดการวิทยากร',fb:'แก้ไขแบบฟอร์ม',login:'เข้าสู่ระบบ'}[tab];
+ $('#m').innerHTML=(tab==='cal'||tab==='dash'?hero():'')+(msg?`<div class="msg">${esc(msg)}</div>`:'')+({cal:vCal,dash:vDash,form:vForm,adm:vAdm,spk:vSpk,fb:vFb,login:vLogin}[tab])();
+ if(tab==='dash')bindDash()}
+window.go=k=>{tab=k;msg='';popup=null;if(k==='fb')fbDraft=JSON.parse(JSON.stringify(cfg()));document.body.classList.remove('sbo');render()};
+/* ---------- Login ---------- */
+function vLogin(){return `<div class="card" style="max-width:380px;margin:auto"><h3>เข้าสู่ระบบ</h3><p class="mu">สำหรับแอดมินและวิทยากร — ใช้จัดการอบรม (เฉพาะแอดมินจัดการวิทยากรและแอดมินได้)</p>
+<label>Username<input id="lu" autocomplete="username"></label><br><label>Password<input id="lp" type="password" autocomplete="current-password"></label><br><button class="p" onclick="doLogin()">เข้าสู่ระบบ</button></div>`}
+window.doLogin=async()=>{const u=$('#lu').value.trim().toLowerCase(),h=await sha($('#lp').value);let a=admins.find(x=>x.username===u&&x.pw===h),r='admin';
+ if(!a){a=speakers.find(x=>x.username===u&&x.pw===h);r='speaker'}
+ if(!a&&!admins.length&&u==='piyapsu'&&h===await sha('piyapsu1234')){a={id:'piyapsu',firstName:'Piyaphat',lastName:'Suwankasem',email:'piyapsu@kku.ac.th',username:'piyapsu',pw:h};r='admin';try{await db.doc('admins/piyapsu').set(a)}catch(e){}}
+ if(!a)return setMsg('Username หรือ Password ไม่ถูกต้อง');
+ me={...a,role:r};tab='form';msg='';render()};
+/* ---------- Calendar ---------- */
+function vCal(){const y=cur.getFullYear(),m=cur.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate();
+ let c=TD.map(d=>`<div class="h">${d}</div>`).join('')+'<div></div>'.repeat(first);
+ for(let i=1;i<=n;i++){const k=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`,ev=calEv().filter(e=>e.date<=k&&(e.endDate||e.date)>=k);
+  c+=`<div class="d ${selDay===k?'sel':''} ${k===TODAY()?'today':''}" onclick="openDay('${k}')"><b>${i}</b>${ev.slice(0,2).map(e=>`<div class="t" onclick="event.stopPropagation();openEv(['${e.id}'])">${e.startTime?esc(e.startTime)+' ':''}${esc(e.topic)}</div>`).join('')}${ev.length>2?`<div class="mu">+${ev.length-2}</div>`:''}</div>`}
+ const ev=selDay?calEv().filter(e=>e.date<=selDay&&(e.endDate||e.date)>=selDay):[];
+ return `<div class="card"><div class="row" style="margin-bottom:12px"><span class="mu">🎤 วิทยากร</span><select id="cs" onchange="calSp=this.value;render()" style="flex:1;min-width:200px"><option value="">ทุกวิทยากร</option>${spNames().map(n=>`<option value="${esc(n)}" ${n===calSp?'selected':''}>${esc(n)}</option>`).join('')}</select></div>${calSp?`<div class="msg" style="margin:0 0 12px">แสดงเฉพาะกิจกรรมที่ "${esc(calSp)}" เป็นวิทยากร — ${calEv().length} กิจกรรม</div>`:''}<div class="row"><button onclick="cur=new Date(${y},${m-1},1);render()">◀</button><span style="flex:1;display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><select id="cm" onchange="calGo()">${MF.map((t,i)=>`<option value="${i}" ${i===m?'selected':''}>${t}</option>`).join('')}</select><select id="cy" onchange="calGo()">${[...Array(21)].map((_,i)=>y-10+i).map(v=>`<option value="${v}" ${v===y?'selected':''}>${v+543}</option>`).join('')}</select><button onclick="cur=new Date();render()">วันนี้</button></span><button onclick="cur=new Date(${y},${m+1},1);render()">▶</button></div><br><div class="cal">${c}</div></div>`+popHtml()}
+function detail(e){return `<p><b>${esc(e.topic)}</b></p><p>📆 ${fd(e.date)}${e.endDate&&e.endDate!==e.date?' – '+fd(e.endDate):''}${e.startTime?`<br>⏰ ${esc(e.startTime)}${e.endTime?' – '+esc(e.endTime):''} น.`:''}<br>🎤 วิทยากร: ${esc(e.speaker)}<br>📍 ${esc(e.location)}<br>🏛 จัดโดย: ${esc(e.faculty)}<br>${e.trainType||e.courseType?`🏷 ${esc(e.trainType||'-')} · ${esc(e.courseType||'-')}<br>`:''}${e.orgType||e.attType?`🏢 ส่วนงาน: ${esc(e.orgType||'-')} · ผู้เข้าร่วม: ${esc(e.attType||'-')}<br>`:''}👥 ผู้เข้าร่วม: ${esc(e.attendees||'-')} คน${customLines(e)}${e.notes?`<br>📝 ${esc(e.notes)}`:''}</p>
+ ${e.letterId?`<button onclick="dlFile('${e.id}','letter')">⬇ หนังสือเชิญวิทยากร</button> `:''}${e.rosterId?`<button onclick="dlFile('${e.id}','roster')">⬇ รายชื่อผู้เข้าอบรม</button> `:''}<button onclick="editEv('${e.id}')">✏️ แก้ไขการอบรม</button> ${me?`<button onclick="delEv('${e.id}')">ลบ</button>`:''}`}
+const gasLink=e=>gas.url+'?'+new URLSearchParams({token:gas.token||'',id:e.id,date:e.date||'',endDate:e.endDate||'',speaker:e.speaker||'',topic:e.topic||'',location:e.location||'',attendees:e.attendees||'',faculty:e.faculty||'',trainType:e.trainType||'',courseType:e.courseType||'',notes:e.notes||''}).toString();
+const spRow=n=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><input class="spk" list="dl_speaker" placeholder="ชื่อวิทยากร 1 คน" value="${esc(n)}" style="flex:1;min-width:0"><button type="button" title="ลบช่องนี้" onclick="rmSp(this)">✕</button></div>`;
+const spInputs=s=>{const a=spl(s);return (a.length?a:['']).map(spRow).join('')};
+window.addSp=()=>{$('#spk').insertAdjacentHTML('beforeend',spRow(''));[...document.querySelectorAll('.spk')].pop().focus()};
+window.rmSp=b=>{const r=b.closest('.row');if(document.querySelectorAll('.spk').length>1)r.remove();else r.querySelector('input').value=''};
+function askC(t,s,ok,dg){return new Promise(res=>{const o=document.createElement('div');o.className='mdl';o.innerHTML=`<div class="mb"><h3>${esc(t)}</h3><p class="mu" style="white-space:pre-line">${esc(s||'')}</p><div class="row" style="justify-content:flex-end"><button id="cn">ยกเลิก</button><button id="cy2" class="p" ${dg===false?'':'style="background:#e5484d;box-shadow:none"'}>${esc(ok||'ลบ')}</button></div></div>`;document.body.appendChild(o);const f=v=>{o.remove();res(v)};o.querySelector('#cn').onclick=()=>f(false);o.querySelector('#cy2').onclick=()=>f(true);o.onclick=ev=>{if(ev.target===o)f(false)}})}
+window.dlFile=async(id,w)=>{const e=events.find(x=>x.id===id),bid=e&&e[w+'Id'];if(!bid)return;let name=e[w+'Name']||(w==='letter'?'หนังสือเชิญวิทยากร':'รายชื่อผู้เข้าอบรม');
+ try{const r=await fetch('/_blob/'+bid);if(!r.ok)throw 0;const b=await r.blob();if(!/\.\w{2,5}$/.test(name))name+=({'application/pdf':'.pdf','image/png':'.png','image/jpeg':'.jpg','text/csv':'.csv','text/plain':'.txt'}[b.type]||'');await dl.save({filename:name,data:b})}catch(x){window.open('/_blob/'+bid,'_blank')}};
+window.openEv=ids=>{popup=ids;render()};
+window.closePop=()=>{popup=null;render()};
+window.openDay=k=>{selDay=k;const ids=calEv().filter(e=>e.date<=k&&(e.endDate||e.date)>=k).map(e=>e.id);popup=ids.length?ids:null;render()};
+function popHtml(){if(!popup)return'';const evs=popup.map(id=>events.find(e=>e.id===id)).filter(Boolean);if(!evs.length){popup=null;return''}
+ return `<div class="mdl" onclick="if(event.target===this)closePop()"><div class="mb pop"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;margin-bottom:8px"><h3 style="margin:0">${evs.length>1?'กิจกรรมวันที่ '+fd(evs[0].date)+' ('+evs.length+' รายการ)':'รายละเอียดการอบรม'}</h3><button onclick="closePop()" aria-label="ปิด">✕</button></div>${evs.map(detail).join('<hr>')}</div></div>`}
+window.calGo=()=>{cur=new Date(+$('#cy').value,+$('#cm').value,1);render()};
+window.delEv=async id=>{if(await askC('ยืนยันการลบกิจกรรม?',((events.find(x=>x.id===id)||{}).topic||'')+'\nการลบไม่สามารถย้อนกลับได้'))try{await db.doc('events/'+id).delete();popup=null;setMsg('ลบกิจกรรมแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}};
+window.editEv=id=>{popup=null;draft={...events.find(e=>e.id===id)};tab='form';msg=me?'':'กรุณาเข้าสู่ระบบแอดมินเพื่อแก้ไขกิจกรรม (แก้ไขได้เฉพาะแอดมิน)';render()};
+/* ---------- Form + AI ---------- */
+const DEF=[{k:'date',l:'วันที่จัดอบรม (เริ่ม)',t:'date',r:1,b:1},{k:'endDate',l:'วันที่สิ้นสุด',t:'date',b:1},{k:'startTime',l:'เวลาเริ่ม',t:'time',b:1},{k:'endTime',l:'เวลาสิ้นสุด',t:'time',b:1},{k:'speaker',l:'ชื่อวิทยากร',t:'text',b:1},{k:'topic',l:'หัวข้อการอบรม',t:'text',r:1,b:1},{k:'location',l:'สถานที่',t:'text',b:1},{k:'attendees',l:'จำนวนผู้เข้าร่วม (คน)',t:'number',b:1},{k:'faculty',l:'คณะ/หน่วยงานที่จัดกิจกรรม',t:'text',b:1},{k:'trainType',l:'ประเภทการอบรม',t:'select',o:['ในตาราง','นอกตาราง'],b:1},{k:'courseType',l:'ประเภทหลักสูตร',t:'select',o:['Academic Skills','Occupation Skills'],b:1},{k:'orgType',l:'ส่วนงาน',t:'select',o:['ภายใน มข.','ภายนอก มข.'],b:1},{k:'attType',l:'ประเภทผู้เข้าร่วมอบรม',t:'select',o:['นักเรียน','นักศึกษา มข.','บุคลากร มข.','บุคคลภายนอก มข.'],b:1}];
+const LOCK=['date','endDate','speaker','attendees'];
+const cfg=()=>{const st=formCfg&&Array.isArray(formCfg.fields)&&formCfg.fields.length?formCfg.fields:null;if(!st)return DEF.map(x=>({...x}));
+ const out=st.map(f=>{const d=DEF.find(x=>x.k===f.k);return d?{...d,...f,t:LOCK.includes(d.k)?d.t:(f.t||d.t),b:1}:f});DEF.forEach(d=>{if(!out.some(f=>f.k===d.k))out.push({...d})});return out};
+const FL=()=>cfg().filter(f=>!f.h).map(f=>[f.k,f.l+(f.r?' *':''),f.t,f.o||[],f]);
+const customLines=e=>cfg().filter(f=>!f.b&&e[f.k]).map(f=>`<br>▫️ ${esc(f.l)}: ${esc(e[f.k])}`).join('');
+function vForm(){return `<div class="card"><h3>${draft.id?'แก้ไขการอบรม':'บันทึกหนังสือเชิญวิทยากร'}</h3>
+<label>อัปโหลดหนังสือเชิญ (PDF / PNG / JPG) ให้ AI กรอกข้อมูลและเก็บไว้ในระบบ<input type="file" id="f" accept=".pdf,image/png,image/jpeg" onchange="aiRead(this.files[0])"></label><div id="ai" class="mu"></div>${draft.letterId?'<p class="mu">มีไฟล์หนังสือเชิญแนบแล้ว (อัปโหลดใหม่เพื่อแทนที่)</p>':''}<br>
+<div class="grid">${FL().map(([k,l,t,o])=>k==='speaker'?`<div><div style="font-size:13px;color:var(--mu);margin-bottom:3px">${l}</div><div id="spk">${spInputs(draft.speaker)}</div><button type="button" onclick="addSp()" style="margin-top:6px">➕ เพิ่มวิทยากร</button></div>`:t==='select'?`<label>${l}<select id="d_${k}"><option value="">— เลือก —</option>${o.map(v=>`<option ${draft[k]===v?'selected':''}>${v}</option>`).join('')}</select></label>`:t==='textarea'?`<label>${l}<textarea id="d_${k}" rows="2">${esc(draft[k])}</textarea></label>`:`<label>${l}<input type="${t}" id="d_${k}" list="dl_${k}" value="${esc(draft[k])}"></label>`).join('')}</div><br>
+${['topic','speaker','faculty','location'].map(k=>`<datalist id="dl_${k}">${[...new Set(events.flatMap(e=>k==='speaker'?spl(e[k]):[e[k]]).filter(Boolean))].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join('')}
+<label>หมายเหตุ<textarea id="d_notes" rows="2">${esc(draft.notes)}</textarea></label><br>
+<label>อัปโหลดรายชื่อผู้เข้าร่วม (CSV/PDF/ข้อความ)<input type="file" id="ros" onchange="rosterFile=this.files[0]"></label>${draft.rosterId?'<p class="mu">มีไฟล์รายชื่อแนบแล้ว</p>':''}<br>
+<button class="p" onclick="saveEv()">บันทึก</button> <button onclick="draft={};render()">ล้างฟอร์ม</button></div>`}
+async function toImages(file){if(file.type.startsWith('image/'))return[file];
+ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,out=[];
+ for(let i=1;i<=Math.min(pdf.numPages,3);i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:1.6}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;out.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.85)))}return out}
+window.aiRead=async file=>{letterFile=file||null;if(!file)return;const s=$('#ai');if(!sample){s.textContent='AI ไม่พร้อมใช้งาน กรุณากรอกเอง';return}
+ try{s.textContent='กำลังอ่านเอกสารด้วย AI…';const imgs=await toImages(file);
+ const r=await sample.json(`อ่านหนังสือเชิญวิทยากรภาษาไทยในรูปภาพ แล้วตอบเป็น JSON เท่านั้น คีย์: date (วันที่เริ่มอบรม รูปแบบ YYYY-MM-DD ค.ศ. แปลงจาก พ.ศ. โดยลบ 543), endDate (ถ้ามีหลายวัน ไม่เช่นนั้นเว้นว่าง), startTime (เวลาเริ่มอบรม รูปแบบ HH:MM 24 ชั่วโมง ถ้าไม่ระบุเว้นว่าง), endTime (เวลาสิ้นสุด รูปแบบ HH:MM ถ้าไม่ระบุเว้นว่าง), speaker (ชื่อวิทยากรทุกคน คั่นด้วยเครื่องหมายจุลภาค), topic (หัวข้อการอบรมหรือหัวข้อที่วิทยากรบรรยาย), location (สถานที่), attendees (ตัวเลขจำนวนผู้เข้าร่วม ถ้าไม่ระบุให้เว้นว่าง), faculty (คณะ/หน่วยงานที่ขอเชิญหรือจัดกิจกรรม). ห้ามเดาข้อมูลที่ไม่มี`,{images:imgs,cache:false});
+ FL().forEach(([k])=>{if(r[k]!=null){if(k==='speaker')$('#spk').innerHTML=spInputs(Array.isArray(r[k])?r[k].join(','):r[k]);else if($('#d_'+k))$('#d_'+k).value=r[k]}});s.textContent='✅ AI กรอกข้อมูลให้แล้ว กรุณาตรวจทานก่อนบันทึก'}catch(e){s.textContent='อ่านไม่สำเร็จ: '+(e.message||e.code)}};
+window.saveEv=async()=>{const o={...draft};FL().forEach(([k])=>o[k]=k==='speaker'?[...document.querySelectorAll('.spk')].map(i=>i.value.trim()).filter(Boolean).join(', '):$('#d_'+k).value.trim());o.notes=$('#d_notes').value;
+ {const miss=FL().filter(x=>x[4].r&&!o[x[0]]).map(x=>x[1].replace(' *',''));if(miss.length)return setMsg('กรุณากรอก: '+miss.join(', '))}if(!await askC(draft.id?'ยืนยันการบันทึกการแก้ไขกิจกรรม?':'ยืนยันการบันทึกกิจกรรมใหม่?',(o.topic||'')+(o.date?'\n'+fd(o.date):''),'บันทึก',false))return;
+ try{const f=rosterFile||$('#ros').files[0],lf=letterFile;if((f||lf)&&!assets)return setMsg('ระบบอัปโหลดไฟล์ไม่พร้อมใช้งาน (ต้องใช้บัญชีที่มีสิทธิ์ผู้ร่วมแก้ไข)');if(lf){o.letterId=(await assets.upload(lf)).id;o.letterName=lf.name}if(f){o.rosterId=(await assets.upload(f)).id;o.rosterName=f.name}
+ const id=o.id||('e'+Date.now());delete o.id;await db.doc('events/'+id).set(o);draft={};letterFile=rosterFile=null;tab='cal';setMsg('บันทึกแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}};
+/* ---------- Dashboard ---------- */
+const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
+function filt(){return events.filter(e=>{const[y,m]=e.date.split('-').map(Number);if(F.p==='all'){}else if(F.p==='range'){if(F.from&&(e.endDate||e.date)<F.from)return false;if(F.to&&e.date>F.to)return false}else if(y!==+F.y)return false;
+ if(F.p==='month'&&m-1!==+F.m)return false;if(F.p==='quarter'&&Math.floor((m-1)/3)!==+F.q)return false;
+ if(F.ot&&e.orgType!==F.ot)return false;if(F.at&&e.attType!==F.at)return false;if(F.tt&&e.trainType!==F.tt)return false;if(F.ct&&e.courseType!==F.ct)return false;if(F.fac&&e.faculty!==F.fac)return false;if(F.t&&e.topic!==F.t)return false;if(F.sp&&!matchSp(e,F.sp))return false;if(F.s&&!(e.speaker+e.topic).includes(F.s))return false;return true})}
+const normN=t=>String(t||'').replace(/[\s์]/g,'').toLowerCase();
+const matchSp=(e,q)=>{const x=normN(q);return !x||spl(e.speaker).some(n=>normN(n).includes(x))};
+const calEv=()=>calSp?events.filter(e=>matchSp(e,calSp)):events;
+const accNames=()=>[...admins,...speakers].map(x=>((x.firstName||'')+' '+(x.lastName||'')).trim()).filter(Boolean);
+const mergeNames=base=>{const out=[...new Set(base)];accNames().forEach(a=>{if(!out.some(n=>normN(n).includes(normN(a))||normN(a).includes(normN(n))))out.push(a)});return out.filter(Boolean).sort()};
+const spNames=()=>mergeNames(events.flatMap(e=>spl(e.speaker)));
+const nb=(k,i,l,lock)=>`<button class="ni ${tab===k?'on':''}" onclick="go('${k}')"><span>${i}</span>${l}${lock&&!me?'<em>🔒</em>':''}</button>`;
+window.toggleSb=()=>document.body.classList.toggle(innerWidth<=900?'sbo':'nosb');
+function mine(){const nm=t=>String(t||'').replace(/[\s์]/g,'').toLowerCase(),f=nm(me.firstName),l=nm(me.lastName),t=TODAY();
+ const my=events.filter(e=>spl(e.speaker).some(n=>{n=nm(n);return f&&n.includes(f)&&(!l||n.includes(l))})).sort((a,b)=>a.date.localeCompare(b.date));
+ if(!my.length)return '🎤 ยังไม่พบกิจกรรมที่คุณเป็นวิทยากร';
+ const yr=my.filter(e=>e.date.slice(0,4)===t.slice(0,4)).length,att=my.reduce((s,e)=>s+(+e.attendees||0),0),past=my.filter(e=>e.date<=t),next=my.find(e=>e.date>t),ls=past[past.length-1];
+ return `🎤 คุณเป็นวิทยากร <b>${my.length}</b> ครั้ง · ปีนี้ <b>${yr}</b> ครั้ง · ผู้เข้าร่วมรวม <b>${att.toLocaleString()}</b> คน`+(ls?`<br>ล่าสุด: ${fd(ls.date)} — ${esc(ls.topic)}`:'')+(next?`<br>ครั้งถัดไป: ${fd(next.date)} — ${esc(next.topic)}`:'')}
+function hero(){const t=TODAY(),n1=events.filter(e=>e.date<=t&&(e.endDate||e.date)>=t).length,n2=events.filter(e=>(e.date||'').slice(0,7)===t.slice(0,7)).length;
+ return `<div class="hero"><div class="hav">✦</div><div><h2>ยินดีต้อนรับ${me?', '+esc(me.firstName):''}!</h2><div class="mu">${me?mine():`🔔 วันนี้มี ${n1} กิจกรรม · เดือนนี้ ${n2} กิจกรรม · ทั้งหมด ${events.length} กิจกรรม`}</div></div></div>`}
+const kpi=(t,c,n,l,f)=>`<div class="kc"><div class="kt">${t}</div><div class="n" style="color:${c}">${n}</div><div class="kl" style="color:${c}">${l}</div><div class="kf">${f}</div></div>`;
+function kpis(ev,tot){const sp=ev.flatMap(e=>spl(e.speaker)),c=v=>ev.filter(e=>e.trainType===v).length,k=v=>ev.filter(e=>e.courseType===v).length;
+ return `<div class="kpis">${kpi('สรุปกิจกรรม','#3b82f6',ev.length,'กิจกรรม','ในตาราง: <b>'+c('ในตาราง')+'</b> · นอกตาราง: <b>'+c('นอกตาราง')+'</b>')}${kpi('ผู้เข้าร่วม','#ef4444',tot.toLocaleString(),'คน','เฉลี่ย/กิจกรรม: <b>'+(ev.length?Math.round(tot/ev.length):0)+'</b>')}${kpi('วิทยากร','#f59e0b',new Set(sp).size,'ท่าน','รวมการบรรยาย: <b>'+ev.length+'</b> ครั้ง')}${kpi('หัวข้อ/หลักสูตร','#22c55e',new Set(ev.map(e=>e.topic)).size,'หัวข้อ','Academic: <b>'+k('Academic Skills')+'</b> · Occupation: <b>'+k('Occupation Skills')+'</b>')}</div>`}
+const topicAtt=ev=>{const o={};ev.forEach(e=>{const k=e.topic||'-';o[k]=(o[k]||0)+(+e.attendees||0)});return Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,8)};
+const colsHtml=a=>{const mx=Math.max(1,...a.map(x=>x[1]));return `<div class="cols">${a.map(([l,v,h])=>`<div class="col"><span class="cv">${v}</span><div class="cb"><i style="height:${v/mx*100}%;background:${h?'#6366f1':'#a5b4fc'}"></i></div><span class="cl">${l}</span></div>`).join('')}</div>`};
+const monthCols=ev=>colsHtml(TM.map((t,i)=>[t,ev.filter(e=>+e.date.slice(5,7)-1===i).length,true]));
+function yearCols(ev){const cy=new Date().getFullYear(),ys=ev.map(e=>+e.date.slice(0,4)).filter(Boolean);if(!ys.length)return '<p class="mu">ยังไม่มีข้อมูล</p>';
+ const lo=Math.min(...ys),hi=Math.max(...ys,cy),hl=(F.p==='all'||F.p==='range')?cy:+F.y,rows=[];
+ for(let y=lo;y<=hi;y++){const l=ev.filter(e=>+e.date.slice(0,4)===y);rows.push([y,l.length,l.reduce((s,e)=>s+(+e.attendees||0),0)])}
+ const cur=rows.find(r=>r[0]===hl)||[hl,0,0],prev=rows.find(r=>r[0]===hl-1),d=cur[1]-(prev?prev[1]:0),avg=(rows.reduce((s,r)=>s+r[1],0)/rows.length).toFixed(1);
+ return colsHtml(rows.map(([y,n,a])=>[`<b>${y+543}</b><br><small>${a.toLocaleString()} คน</small>`,n,y===hl]))+`<div class="mu" style="margin-top:10px">ปี ${hl+543}: <b>${cur[1]}</b> ครั้ง `+(prev?`(${d>0?'▲ +'+d:d<0?'▼ '+d:'เท่าเดิม'} จากปี ${hl+542}) `:'')+`· เฉลี่ย ${avg} ครั้ง/ปี · แท่งสีเข้ม = ปีที่เลือก</div>`}
+const donut=(t,a)=>{const T=sum(a);if(!T)return `<div class="dn"><b>${t}</b><p class="mu">ไม่มีข้อมูล</p></div>`;let off=0;const R=38,C=2*Math.PI*R;
+ const arcs=a.map(([k,v],i)=>{const L=v/T*C,x=`<circle r="${R}" cx="50" cy="50" fill="none" stroke="${PAL[i%7]}" stroke-width="18" stroke-dasharray="${L.toFixed(2)} ${(C-L).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 50 50)"/>`;off+=L;return x}).join('');
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="130" height="130">${arcs}</svg>`;
+ return `<div class="dn"><b>${t}</b><div class="dw"><img alt="" width="130" height="130" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}"><div class="dc">${T}</div></div><div class="lg1">${a.map(([k,v],i)=>`<div><u style="background:${PAL[i%7]}"></u><span>${esc(k)}</span><b>${v} (${Math.round(v/T*100)}%)</b></div>`).join('')}</div></div>`};
+const PAL=['#6366f1','#06b6d4','#a855f7','#22c55e','#f59e0b','#ec4899','#94a3b8'];
+const sum=a=>a.reduce((t,x)=>t+x[1],0),topN=(a,n)=>{const t=a.slice(0,n),r=sum(a.slice(n));return r?[...t,['อื่น ๆ',r]]:t};
+const legend=a=>`<div class="lg">${a.map(([k,v],i)=>`<div title="${esc(k)}"><u style="background:${PAL[i%7]}"></u><span>${esc(k)}</span><b>${v}</b></div>`).join('')}</div>`;
+function pieSvg(a){const t=sum(a);if(!t)return'<p class="mu">ไม่มีข้อมูล</p>';let s='',g=-Math.PI/2;const P=x=>[50+48*Math.cos(x),50+48*Math.sin(x)].map(n=>n.toFixed(2)).join(' ');
+ if(a.length===1)s=`<circle cx="50" cy="50" r="48" fill="${PAL[0]}"/>`;else a.forEach(([k,v],i)=>{const g2=g+v/t*2*Math.PI;s+=`<path d="M50 50 L${P(g)} A48 48 0 ${v/t>.5?1:0} 1 ${P(g2)} Z" fill="${PAL[i%7]}"/>`;g=g2});
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="150" height="150">${s}</svg>`;return `<div style="display:flex;justify-content:center;margin:6px 0 12px"><img alt="" width="150" height="150" style="display:block" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}"></div>`+legend(a)}
+const stackBar=a=>{const t=sum(a);return t?`<div class="stk">${a.map(([k,v],i)=>`<i style="width:${v/t*100}%;background:${PAL[i%7]}"></i>`).join('')}</div>`+legend(a):'<p class="mu">ไม่มีข้อมูล</p>'};
+const prog=(a,mono)=>{const mx=Math.max(1,...a.map(x=>x[1]));return a.length?a.map(([k,v],i)=>`<div class="pg"><div class="pl"><span title="${esc(k)}">${esc(k)}</span><b>${v}</b></div><div class="pt"><i style="width:${v/mx*100}%;background:${PAL[mono?0:i%7]}"></i></div></div>`).join(''):'<p class="mu">ไม่มีข้อมูล</p>'};
+const shareBlock=(t,a)=>{const T=sum(a),pc=i=>a[i]&&T?Math.round(a[i][1]/T*100)+'%':'-';return `<div><div class="sub">${t}</div><div class="pc">${[0,1].map(i=>`<div><span>${pc(i)}</span><small>${a[i]?esc(a[i][0]):''}</small></div>`).join('')}</div></div>`};
+function fix(){if(!events.some(e=>(!F.fac||e.faculty===F.fac)&&(!F.t||e.topic===F.t)&&(!F.sp||matchSp(e,F.sp))))['fac','t','sp'].forEach(k=>{if(k!==F.last)F[k]=''})}
+function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r=filt();F.p=p;return r})(),sub=ex=>events.filter(e=>(ex==='fac'||!F.fac||e.faculty===F.fac)&&(ex==='t'||!F.t||e.topic===F.t)&&(ex==='sp'||!F.sp||matchSp(e,F.sp))),facs=[...new Set(sub('fac').map(e=>e.faculty).filter(Boolean))],tops=[...new Set(sub('t').map(e=>e.topic).filter(Boolean))],spks=(F.fac||F.t)?[...new Set(sub('sp').flatMap(e=>spl(e.speaker)))].sort():mergeNames(sub('sp').flatMap(e=>spl(e.speaker))),yrs=[...new Set([...events.map(e=>+e.date.slice(0,4)),new Date().getFullYear()])].sort();
+ const tot=ev.reduce((a,e)=>a+(+e.attendees||0),0),by=(f)=>{const o={};ev.forEach(e=>{const k=f(e)||'-';o[k]=(o[k]||0)+1});return Object.entries(o).sort((a,b)=>b[1]-a[1])};
+ const byM=f=>{const o={};ev.forEach(e=>f(e).forEach(k=>o[k]=(o[k]||0)+1));return Object.entries(o).sort((a,b)=>b[1]-a[1])};const bars=a=>{const mx=Math.max(1,...a.map(x=>x[1]));return a.slice(0,10).map(([k,v])=>`<div class="bar"><span style="width:140px">${esc(k)}</span><i style="width:${v/mx*50}%"></i>${v}</div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'};
+ const per=F.p==='all'?'ทุกช่วงเวลา':F.p==='range'?`${fd(F.from)||'…'} – ${fd(F.to)||'…'}`:F.p==='month'?`${TM[F.m]} ${+F.y+543}`:F.p==='quarter'?`ไตรมาส ${+F.q+1} ปี ${+F.y+543}`:`ปี ${+F.y+543}`;
+ return `<div class="card"><div class="row">
+ <select id="fp"><option value="all">ทั้งหมด (ไม่จำกัดช่วงเวลา)</option><option value="month">รายเดือน</option><option value="quarter">รายไตรมาส (3 เดือน)</option><option value="year">รายปี</option><option value="range">ช่วงวันที่</option></select>
+ <select id="fy" class="${F.p==='range'||F.p==='all'?'hide':''}">${yrs.map(y=>`<option value="${y}">${y+543}</option>`).join('')}</select>
+ <select id="fm" class="${F.p==='month'?'':'hide'}">${TM.map((t,i)=>`<option value="${i}">${t}</option>`).join('')}</select>
+ <select id="fq" class="${F.p==='quarter'?'':'hide'}">${[0,1,2,3].map(i=>`<option value="${i}">Q${i+1} (${TM[i*3]}–${TM[i*3+2]})</option>`).join('')}</select>
+ <label class="${F.p==='range'?'':'hide'}" style="display:flex;gap:6px;align-items:center">ตั้งแต่<input type="date" id="fa" style="margin:0">ถึง<input type="date" id="fb" style="margin:0"></label>
+ ${['orgType','attType'].map(k=>{const f=cfg().find(x=>x.k===k)||{};return `<select id="f${k==='orgType'?'ot':'at'}"><option value="">ทุก${esc(f.l||k)}</option>${(f.o||[]).map(v=>`<option>${esc(v)}</option>`).join('')}</select>`}).join('')}
+ <select id="ftt"><option value="">ทุกประเภทการอบรม</option><option>ในตาราง</option><option>นอกตาราง</option></select>
+ <select id="fct"><option value="">ทุกประเภทหลักสูตร</option><option>Academic Skills</option><option>Occupation Skills</option></select>
+ <select id="ff"><option value="">ทุกคณะ/หน่วยงาน</option>${facs.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
+ <select id="ft"><option value="">ทุกหัวข้อ</option>${tops.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
+ <select id="fsp"><option value="">ทุกวิทยากร</option>${spks.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
+ <input id="fs" placeholder="ค้นหาวิทยากร/หัวข้อ" value="${esc(F.s)}">
+ <button class="dx" onclick="xl()">⬇ ดาว์โหลด Excel</button><button class="dp" onclick="pdf()">⬇ ดาว์โหลด PDF</button></div></div>
+ <div id="rep">${kpis(ev,tot)}
+ <div class="card"><b class="ct">📈 เปรียบเทียบจำนวนการอบรมรายปี</b>${yearCols(evAll)}</div>
+ <div class="grid3"><div class="card"><b class="ct">📅 จำนวนการอบรมรายเดือน</b>${monthCols(ev)}</div><div class="card"><b class="ct">🏛 คณะ/หน่วยงานที่จัด (ครั้ง)</b>${prog(by(e=>e.faculty).slice(0,8),1)}</div></div>
+ <div class="grid3"><div class="card"><b class="ct">🎤 วิทยากร (ครั้ง)</b>${prog(byM(e=>spl(e.speaker).filter(n=>!F.sp||normN(n).includes(normN(F.sp)))).slice(0,8),1)}</div><div class="card"><b class="ct">📚 หัวข้อที่มีผู้เข้าร่วมมากที่สุด (คน)</b>${prog(topicAtt(ev),1)}</div></div>
+ <div class="card"><b class="ct">สัดส่วนตามประเภท</b><div class="dgrid">${donut('ประเภทการอบรม',by(e=>e.trainType||'ไม่ระบุ'))}${donut('ประเภทหลักสูตร',by(e=>e.courseType||'ไม่ระบุ'))}${donut('ส่วนงาน',by(e=>e.orgType||'ไม่ระบุ'))}${donut('ประเภทผู้เข้าร่วม',by(e=>e.attType||'ไม่ระบุ'))}</div></div>
+ <div class="card"><div><div><b class="ct">กิจกรรมล่าสุด · ${per}</b>${ev.slice().sort((x,y)=>y.date.localeCompare(x.date)).slice(0,6).map(e=>`<div class="li"><b>${fd(e.date)}</b><br><span>${esc(e.topic)}</span></div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'}</div></div></div>
+ <div class="card tw"><table><tr><th>วันที่</th><th>เวลา</th><th>หัวข้อ</th><th>วิทยากร</th><th>สถานที่</th><th>จำนวน</th><th>หน่วยงาน</th><th>ประเภทการอบรม</th><th>หลักสูตร</th></tr>${ev.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<tr><td>${fd(e.date)}</td><td>${esc(e.startTime?e.startTime+(e.endTime?'–'+e.endTime:''):'')}</td><td>${esc(e.topic)}</td><td>${esc(e.speaker)}</td><td>${esc(e.location)}</td><td>${esc(e.attendees)}</td><td>${esc(e.faculty)}</td><td>${esc(e.trainType)}</td><td>${esc(e.courseType)}</td></tr>`).join('')}</table></div></div>`}
+function bindDash(){[['fp','p'],['fy','y'],['fm','m'],['fq','q'],['ff','fac'],['ft','t'],['fsp','sp'],['ftt','tt'],['fot','ot'],['fat','at'],['fct','ct'],['fa','from'],['fb','to']].forEach(([i,k])=>{const el=$('#'+i);el.value=F[k];el.onchange=()=>{F[k]=el.value;F.last=k;render()}});const s=$('#fs');s.onchange=()=>{F.s=s.value;render()}}
+window.xl=async()=>{const ev=filt().map(e=>({'วันที่':fd(e.date),'เวลา':e.startTime?e.startTime+(e.endTime?'–'+e.endTime:''):'','หัวข้อ':e.topic,'วิทยากร':e.speaker,'สถานที่':e.location,'จำนวนผู้เข้าร่วม':+e.attendees||0,'หน่วยงาน':e.faculty,'ประเภทการอบรม':e.trainType||'','ประเภทหลักสูตร':e.courseType||'','ส่วนงาน':e.orgType||'','ประเภทผู้เข้าร่วม':e.attType||'',...Object.fromEntries(cfg().filter(f=>!f.b&&!f.h).map(f=>[f.l,e[f.k]||''])),'หมายเหตุ':e.notes||''}));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ev),'สรุป');
+ try{await dl.save({filename:'สรุปกิจกรรม.xlsx',data:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])})}catch(e){setMsg('ดาวน์โหลดไม่สำเร็จ: '+(e.code||e.message))}};
+window.pdf=async()=>{setMsg('กำลังสร้าง PDF…');
+ try{const el=$('#rep');if(!el)throw new Error('ไม่พบหน้าสรุป');
+ const bg=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#ffffff',S=2;
+ let br=[],H=0,Wc=0,hd=null;const trs=new Set();
+ const c=await html2canvas(el,{scale:S,useCORS:true,logging:false,backgroundColor:bg,windowWidth:1200,
+  onclone:(d,n)=>{n=n||d.querySelector('#rep');d.querySelectorAll('*').forEach(x=>{x.style.animation='none';x.style.transition='none'});
+   const r=n.getBoundingClientRect(),t0=r.top;Wc=r.width;H=r.height;
+   [...n.children].forEach(ch=>br.push(ch.getBoundingClientRect().top-t0));
+   n.querySelectorAll('table tr').forEach((tr,i)=>{const q=tr.getBoundingClientRect();if(i===0)hd=[q.top-t0,q.bottom-t0];else{br.push(q.top-t0);trs.add(Math.round(q.top-t0))}})}});
+ const {jsPDF}=window.jspdf,p=new jsPDF('l','mm','a4'),PW=277,PH=190,k=PW/(c.width/S),capCss=PH/k,hh=hd?hd[1]-hd[0]:0;
+ br=[...new Set(br.map(Math.round))].sort((a,b)=>a-b);H=c.height/S;
+ const pages=[];let y=0;
+ while(y<H-1){const isRow=!!hd&&trs.has(Math.round(y)),cap=capCss-(isRow?hh:0);let end=Math.min(H,y+cap);
+  if(end<H-1){const cand=br.filter(v=>v>y+20&&v<=end);if(cand.length)end=cand[cand.length-1]}else end=H;
+  pages.push([y,end,isRow]);y=end}
+ pages.forEach(([y0,y1,isRow],i)=>{if(i)p.addPage();
+  const pc=document.createElement('canvas'),off=isRow?hh*S:0;pc.width=c.width;pc.height=Math.ceil((y1-y0)*S+off);
+  const x=pc.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,pc.width,pc.height);
+  if(isRow)x.drawImage(c,0,hd[0]*S,c.width,hh*S,0,0,c.width,hh*S);
+  x.drawImage(c,0,y0*S,c.width,Math.min((y1-y0)*S,c.height-y0*S),0,off,c.width,Math.min((y1-y0)*S,c.height-y0*S));
+  p.addImage(pc.toDataURL('image/jpeg',.92),'JPEG',10,10,PW,pc.height/S*k);
+  p.setFontSize(8);p.setTextColor(120);p.text((i+1)+' / '+pages.length,148.5,205,{align:'center'})});
+ await dl.save({filename:'สรุปกิจกรรม.pdf',data:p.output('blob')});setMsg('สร้างไฟล์ PDF แล้ว ('+pages.length+' หน้า A4 แนวนอน)')}
+ catch(e){setMsg('สร้าง PDF ไม่สำเร็จ: '+(e&&(e.message||e.code)||e))}};
+/* ---------- Form builder ---------- */
+function vFb(){const T=[['text','ข้อความสั้น'],['textarea','ข้อความยาว'],['number','ตัวเลข'],['date','วันที่'],['time','เวลา'],['select','Dropdown']];
+ return `<div class="card"><h3>แก้ไขแบบฟอร์มจัดการอบรม</h3><p class="mu">ปรับชื่อช่อง ลำดับ ซ่อน/แสดง บังคับกรอก และเพิ่มช่องข้อมูลใหม่ได้ ช่องที่มาจากระบบ (🔒) ลบไม่ได้แต่ซ่อนได้ ช่อง "ชื่อวิทยากร" เพิ่มทีละคนเสมอ การเปลี่ยนจะมีผลเมื่อกด "บันทึกแบบฟอร์ม"</p>
+ ${fbDraft.map((f,i)=>`<div class="fbr"><div class="row" style="flex-wrap:nowrap"><div style="display:flex;gap:4px"><button onclick="fbMv(${i},-1)">↑</button><button onclick="fbMv(${i},1)">↓</button></div>
+ <input value="${esc(f.l)}" oninput="fbSet(${i},'l',this.value)" style="flex:1;min-width:0"><select onchange="fbSet(${i},'t',this.value,1)" ${LOCK.includes(f.k)?'disabled title="ชนิดของช่องนี้ถูกล็อก เพราะระบบใช้คำนวณ"':''}>${T.map(([v,n])=>`<option value="${v}" ${f.t===v?'selected':''}>${n}</option>`).join('')}</select></div>
+ <div class="row" style="margin-top:8px"><label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.r?'checked':''} onchange="fbSet(${i},'r',this.checked)" style="width:auto;margin:0">บังคับกรอก</label>
+ <label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.h?'':'checked'} onchange="fbSet(${i},'h',!this.checked)" style="width:auto;margin:0">แสดงในฟอร์ม</label>
+ ${f.b?`<span class="mu">${LOCK.includes(f.k)?'🔒 ช่องระบบ (ชนิดคงที่)':'ช่องระบบ (ลบไม่ได้)'}</span>`:`<button onclick="fbDel(${i})">🗑 ลบช่อง</button>`}</div>
+ ${f.t==='select'?`<div style="margin-top:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">ตัวเลือกใน Dropdown</div>${(f.o||[]).map((v,j)=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="mu" style="width:24px;text-align:right">${j+1}.</span><input value="${esc(v)}" placeholder="ตัวเลือกที่ ${j+1}" oninput="fbOpt(${i},${j},this.value)" style="flex:1;min-width:0"><button onclick="fbOptDel(${i},${j})" title="ลบตัวเลือกนี้">✕</button></div>`).join('')}<button onclick="fbOptAdd(${i})">➕ เพิ่มตัวเลือก</button></div>`:''}</div>`).join('')}
+ <div class="row" style="margin-top:12px"><button onclick="fbAdd()">➕ เพิ่มช่องข้อมูล</button><button onclick="fbReset()">↺ คืนค่าเริ่มต้น</button><button class="p" onclick="fbSave()">บันทึกแบบฟอร์ม</button></div></div>`}
+window.fbSet=(i,k,v,re)=>{fbDraft[i][k]=v;if(k==='t'&&v==='select'&&!(fbDraft[i].o||[]).length)fbDraft[i].o=['ตัวเลือก 1','ตัวเลือก 2'];if(re)render()};
+window.fbOpt=(i,j,v)=>{fbDraft[i].o[j]=v};
+window.fbOptAdd=i=>{(fbDraft[i].o=fbDraft[i].o||[]).push('');render();const r=document.querySelectorAll('.fbr')[i];if(r){const x=[...r.querySelectorAll('input[oninput^="fbOpt("]')].pop();if(x)x.focus()}};
+window.fbOptDel=(i,j)=>{fbDraft[i].o.splice(j,1);render()};
+window.fbMv=(i,d)=>{const j=i+d;if(j<0||j>=fbDraft.length)return;[fbDraft[i],fbDraft[j]]=[fbDraft[j],fbDraft[i]];render()};
+window.fbDel=async i=>{if(await askC('ลบช่องข้อมูลนี้?','ข้อมูลที่เคยบันทึกไว้ในช่องนี้ยังอยู่ แต่จะไม่แสดงในฟอร์ม')){fbDraft.splice(i,1);render()}};
+window.fbAdd=()=>{fbDraft.push({k:'x'+Date.now().toString(36),l:'ช่องข้อมูลใหม่',t:'text'});render()};
+window.fbReset=async()=>{if(await askC('คืนค่าเริ่มต้น?','ช่องที่เพิ่มเองจะหายจากฟอร์ม (ยังไม่บันทึกจนกว่าจะกดบันทึกแบบฟอร์ม)','คืนค่า')){fbDraft=DEF.map(x=>({...x,o:x.o?[...x.o]:undefined}));render()}};
+window.fbSave=async()=>{if(!await askC('ยืนยันการบันทึกแบบฟอร์ม?','การเปลี่ยนแปลงจะมีผลกับทุกคนที่ใช้ฟอร์มจัดการอบรม','บันทึก',false))return;try{fbDraft.forEach(f=>{if(f.o)f.o=f.o.map(x=>String(x).trim()).filter(Boolean)});await db.doc('settings/form').set({fields:JSON.parse(JSON.stringify(fbDraft))});setMsg('บันทึกแบบฟอร์มแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
+/* ---------- Speakers ---------- */
+function vSpk(){return `<div class="card"><h3>วิทยากร</h3><div class="tw"><table><tr><th>ชื่อ</th><th>E-mail</th><th>Username</th><th>สิทธิ์</th></tr>${admins.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><b>แอดมิน + วิทยากร</b><br><span class="mu">แก้ไขที่หน้าจัดการแอดมิน</span></td></tr>`).join('')}${speakers.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><button onclick="eS('${a.id}')">แก้ไข</button> <button onclick="dS('${a.id}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4" class="mu">ยังไม่มีวิทยากรที่เป็นวิทยากรอย่างเดียว</td></tr>'}</table></div></div>
+ <div class="card"><h3 id="sh">เพิ่ม/แก้ไขวิทยากร</h3><p class="mu">แอดมินทุกคนนับเป็นวิทยากรด้วยอัตโนมัติ ส่วนวิทยากรที่เพิ่มที่นี่จะเป็นวิทยากรเท่านั้น การล็อกอินได้ดูปฏิทิน Dashboard และจัดการอบรมได้ แต่จัดการวิทยากรและแอดมินไม่ได้</p><div class="grid"><label>ชื่อจริง<input id="s1"></label><label>นามสกุล<input id="s2"></label><label>E-mail<input id="s3" oninput="autoS()"></label><label>Username<input id="s4"></label><label>Password (เว้นว่าง = Username+1234 / ตอนแก้ไขเว้นว่าง = ไม่เปลี่ยน)<input id="s5" type="text"></label></div><br><button class="p" onclick="sS()">บันทึก</button> <button onclick="render()">ล้างฟอร์ม</button></div>`}
+window.autoS=()=>{$('#s4').value=$('#s3').value.split('@')[0].toLowerCase()};
+window.eS=id=>{const a=speakers.find(x=>x.id===id);$('#s1').value=a.firstName;$('#s2').value=a.lastName;$('#s3').value=a.email;$('#s4').value=a.username;$('#s5').value='';$('#s4').dataset.old=id;$('#sh').scrollIntoView()};
+window.dS=async id=>{if(await askC('ยืนยันการลบวิทยากร?','วิทยากรคนนี้จะเข้าสู่ระบบไม่ได้อีก (ข้อมูลกิจกรรมเดิมไม่ถูกลบ)'))try{await db.doc('speakers/'+id).delete();setMsg('ลบวิทยากรแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ')}};
+window.sS=async()=>{const a={firstName:$('#s1').value.trim(),lastName:$('#s2').value.trim(),email:$('#s3').value.trim(),username:$('#s4').value.trim().toLowerCase()},old=$('#s4').dataset.old;
+ if(!a.firstName||!a.email||!a.username)return setMsg('กรุณากรอกข้อมูลให้ครบ');
+ if(admins.some(x=>x.username===a.username)||speakers.some(x=>x.username===a.username&&x.id!==old))return setMsg('Username นี้ถูกใช้แล้ว');
+ if(!await askC(old?'ยืนยันการบันทึกการแก้ไขวิทยากร?':'ยืนยันการเพิ่มวิทยากร?',a.firstName+' '+a.lastName+' ('+a.username+')','บันทึก',false))return;const pw=$('#s5').value||(old?null:a.username+'1234');if(pw)a.pw=await sha(pw);else a.pw=speakers.find(x=>x.id===old).pw;
+ try{await db.doc('speakers/'+a.username).set(a);if(old&&old!==a.username)await db.doc('speakers/'+old).delete();setMsg('บันทึกวิทยากรแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
+/* ---------- Admin ---------- */
+function vAdm(){return `<div class="card"><h3>แอดมิน</h3><div class="tw"><table><tr><th>ชื่อ</th><th>E-mail</th><th>Username</th><th></th></tr>${admins.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><button onclick="eA('${a.id}')">แก้ไข</button> <button onclick="dA('${a.id}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4" class="mu">ยังไม่มีข้อมูลในฐานข้อมูล (ล็อกอินด้วยบัญชีเริ่มต้นจะถูกบันทึกให้)</td></tr>'}</table></div></div>
+ <div class="card"><h3 id="at">เพิ่ม/แก้ไขแอดมิน</h3><div class="grid"><label>ชื่อจริง<input id="a1"></label><label>นามสกุล<input id="a2"></label><label>E-mail<input id="a3" oninput="auto()"></label><label>Username<input id="a4"></label><label>Password (เว้นว่าง = Username+1234 / ตอนแก้ไขเว้นว่าง = ไม่เปลี่ยน)<input id="a5" type="text"></label></div><br><button class="p" onclick="sA()">บันทึก</button></div>`}
+window.sG=async()=>{try{await db.doc('settings/gas').set({url:$('#g1').value.trim(),token:$('#g2').value.trim()});setMsg('บันทึกการเชื่อมต่อแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
+window.auto=()=>{$('#a4').value=$('#a3').value.split('@')[0].toLowerCase()};
+window.eA=id=>{const a=admins.find(x=>x.id===id);$('#a1').value=a.firstName;$('#a2').value=a.lastName;$('#a3').value=a.email;$('#a4').value=a.username;$('#a5').value='';$('#a4').dataset.old=id;scrollTo(0,document.body.scrollHeight)};
+window.dA=async id=>{if(admins.length<2)return setMsg('ต้องเหลือแอดมินอย่างน้อย 1 คน');if(await askC('ยืนยันการลบแอดมิน?','ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้อีก'))try{await db.doc('admins/'+id).delete()}catch(e){setMsg('ลบไม่สำเร็จ')}};
+window.sA=async()=>{const a={firstName:$('#a1').value.trim(),lastName:$('#a2').value.trim(),email:$('#a3').value.trim(),username:$('#a4').value.trim().toLowerCase()},old=$('#a4').dataset.old;
+ if(!a.firstName||!a.email||!a.username)return setMsg('กรุณากรอกข้อมูลให้ครบ');if(speakers.some(x=>x.username===a.username))return setMsg('Username นี้ถูกใช้แล้ว (มีในรายชื่อวิทยากร)');if(!await askC(old?'ยืนยันการบันทึกการแก้ไขแอดมิน?':'ยืนยันการเพิ่มแอดมิน?',a.firstName+' '+a.lastName+' ('+a.username+')','บันทึก',false))return;const pw=$('#a5').value||(old?null:a.username+'1234');
+ if(pw)a.pw=await sha(pw);else a.pw=admins.find(x=>x.id===old).pw;
+ try{await db.doc('admins/'+a.username).set(a);if(old&&old!==a.username)await db.doc('admins/'+old).delete();setMsg('บันทึกแอดมินแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
+init();
+</script></body></html>
