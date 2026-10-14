@@ -77,8 +77,12 @@ body.nosb #side{margin-left:-268px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
+const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec',DRIVE_TOKEN='KKUL1188945';
 const TM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],TD=['อา','จ','อ','พ','พฤ','ศ','ส'];
-let formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',from:'',to:''};
+const DEF_ADMIN={id:'piyapsu',firstName:'Piyaphat',lastName:'Suwankasem',email:'piyapsu@kku.ac.th',username:'piyapsu',pw:'2bdf436177bd99a9b510050176583a132cbfb04b730573d68c5c12f74fc57092',builtin:true};
+const withDef=l=>l.some(x=>x.username==='piyapsu')?l:[DEF_ADMIN,...l];
+let formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[DEF_ADMIN],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',from:'',to:''};
 const MF=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const TODAY=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const fd=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+dd} ${TM[m-1]} ${+y+543}`};
@@ -86,8 +90,9 @@ const sha=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new T
 function setMsg(t){msg=t;render()}
 async function init(){
  try{db=await claude.use('db');assets=await claude.use('assets');sample=await claude.use('sample');dl=await claude.use('downloads')}catch(e){}
+ if(!dl)dl={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();a.remove()}};
  if(db){try{db.collection('events').onSnapshot(s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));render()});
-  db.collection('admins').onSnapshot(s=>{admins=s.docs.map(d=>({id:d.id,...d.data()}));render()});
+  db.collection('admins').onSnapshot(s=>{admins=withDef(s.docs.map(d=>({id:d.id,...d.data()})));render()});
   db.collection('speakers').onSnapshot(s=>{speakers=s.docs.map(d=>({id:d.id,...d.data()}));render()});
   db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;render()})}catch(e){}}
  render()}
@@ -114,14 +119,21 @@ function vCal(){const y=cur.getFullYear(),m=cur.getMonth(),first=new Date(y,m,1)
  const ev=selDay?calEv().filter(e=>e.date<=selDay&&(e.endDate||e.date)>=selDay):[];
  return `<div class="card"><div class="row" style="margin-bottom:12px"><span class="mu">🎤 วิทยากร</span><select id="cs" onchange="calSp=this.value;render()" style="flex:1;min-width:200px"><option value="">ทุกวิทยากร</option>${spNames().map(n=>`<option value="${esc(n)}" ${n===calSp?'selected':''}>${esc(n)}</option>`).join('')}</select></div>${calSp?`<div class="msg" style="margin:0 0 12px">แสดงเฉพาะกิจกรรมที่ "${esc(calSp)}" เป็นวิทยากร — ${calEv().length} กิจกรรม</div>`:''}<div class="row"><button onclick="cur=new Date(${y},${m-1},1);render()">◀</button><span style="flex:1;display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><select id="cm" onchange="calGo()">${MF.map((t,i)=>`<option value="${i}" ${i===m?'selected':''}>${t}</option>`).join('')}</select><select id="cy" onchange="calGo()">${[...Array(21)].map((_,i)=>y-10+i).map(v=>`<option value="${v}" ${v===y?'selected':''}>${v+543}</option>`).join('')}</select><button onclick="cur=new Date();render()">วันนี้</button></span><button onclick="cur=new Date(${y},${m+1},1);render()">▶</button></div><br><div class="cal">${c}</div></div>`+popHtml()}
 function detail(e){return `<p><b>${esc(e.topic)}</b></p><p>📆 ${fd(e.date)}${e.endDate&&e.endDate!==e.date?' – '+fd(e.endDate):''}${e.startTime?`<br>⏰ ${esc(e.startTime)}${e.endTime?' – '+esc(e.endTime):''} น.`:''}<br>🎤 วิทยากร: ${esc(e.speaker)}<br>📍 ${esc(e.location)}<br>🏛 จัดโดย: ${esc(e.faculty)}<br>${e.trainType||e.courseType?`🏷 ${esc(e.trainType||'-')} · ${esc(e.courseType||'-')}<br>`:''}${e.orgType||e.attType?`🏢 ส่วนงาน: ${esc(e.orgType||'-')} · ผู้เข้าร่วม: ${esc(e.attType||'-')}<br>`:''}👥 ผู้เข้าร่วม: ${esc(e.attendees||'-')} คน${customLines(e)}${e.notes?`<br>📝 ${esc(e.notes)}`:''}</p>
- ${e.letterId?`<button onclick="dlFile('${e.id}','letter')">⬇ หนังสือเชิญวิทยากร</button> `:''}${e.rosterId?`<button onclick="dlFile('${e.id}','roster')">⬇ รายชื่อผู้เข้าอบรม</button> `:''}<button onclick="editEv('${e.id}')">✏️ แก้ไขการอบรม</button> ${me?`<button onclick="delEv('${e.id}')">ลบ</button>`:''}`}
+ ${e.driveFolder&&me?`<a href="${esc(e.driveFolder)}" target="_blank" rel="noopener"><button>📁 เปิดโฟลเดอร์ใน Drive</button></a> `:''}${e.letterId?`<button onclick="dlFile('${e.id}','letter')">⬇ หนังสือเชิญวิทยากร</button> `:''}${e.rosterId?`<button onclick="dlFile('${e.id}','roster')">⬇ รายชื่อผู้เข้าอบรม</button> `:''}<button onclick="editEv('${e.id}')">✏️ แก้ไขการอบรม</button> ${me?`<button onclick="delEv('${e.id}')">ลบ</button>`:''}`}
 const gasLink=e=>gas.url+'?'+new URLSearchParams({token:gas.token||'',id:e.id,date:e.date||'',endDate:e.endDate||'',speaker:e.speaker||'',topic:e.topic||'',location:e.location||'',attendees:e.attendees||'',faculty:e.faculty||'',trainType:e.trainType||'',courseType:e.courseType||'',notes:e.notes||''}).toString();
 const spRow=n=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><input class="spk" list="dl_speaker" placeholder="ชื่อวิทยากร 1 คน" value="${esc(n)}" style="flex:1;min-width:0"><button type="button" title="ลบช่องนี้" onclick="rmSp(this)">✕</button></div>`;
 const spInputs=s=>{const a=spl(s);return (a.length?a:['']).map(spRow).join('')};
 window.addSp=()=>{$('#spk').insertAdjacentHTML('beforeend',spRow(''));[...document.querySelectorAll('.spk')].pop().focus()};
 window.rmSp=b=>{const r=b.closest('.row');if(document.querySelectorAll('.spk').length>1)r.remove();else r.querySelector('input').value=''};
 function askC(t,s,ok,dg){return new Promise(res=>{const o=document.createElement('div');o.className='mdl';o.innerHTML=`<div class="mb"><h3>${esc(t)}</h3><p class="mu" style="white-space:pre-line">${esc(s||'')}</p><div class="row" style="justify-content:flex-end"><button id="cn">ยกเลิก</button><button id="cy2" class="p" ${dg===false?'':'style="background:#e5484d;box-shadow:none"'}>${esc(ok||'ลบ')}</button></div></div>`;document.body.appendChild(o);const f=v=>{o.remove();res(v)};o.querySelector('#cn').onclick=()=>f(false);o.querySelector('#cy2').onclick=()=>f(true);o.onclick=ev=>{if(ev.target===o)f(false)}})}
-window.dlFile=async(id,w)=>{const e=events.find(x=>x.id===id),bid=e&&e[w+'Id'];if(!bid)return;let name=e[w+'Name']||(w==='letter'?'หนังสือเชิญวิทยากร':'รายชื่อผู้เข้าอบรม');
+const b64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(new Error('อ่านไฟล์ไม่สำเร็จ'));r.readAsDataURL(f)});
+async function drivePost(o){const r=await fetch(DRIVE_API,{method:'POST',body:JSON.stringify({...o,token:DRIVE_TOKEN})});if(!r.ok)throw new Error('เชื่อมต่อ Google Drive ไม่ได้ ('+r.status+')');return r.json()}
+async function upFile(file,kind,folder,oldId){if(!DRIVE_API)return{id:(await assets.upload(file)).id};
+ const d=await drivePost({action:'upload',folder,kind,fileName:file.name,mime:file.type||'application/octet-stream',data:await b64(file),replaceId:String(oldId||'').startsWith('drive:')?oldId.slice(6):''});
+ if(!d.ok)throw new Error(d.error||'อัปโหลดไม่สำเร็จ');return{id:'drive:'+d.fileId,folder:d.folderUrl}}
+window.dlFile=async(id,w)=>{const e=events.find(x=>x.id===id),bid=e&&e[w+'Id'];if(!bid)return;
+ if(String(bid).startsWith('drive:')){try{setMsg('กำลังดาวน์โหลดจาก Google Drive…');const d=await drivePost({action:'download',id:bid.slice(6)});if(!d.ok)throw new Error(d.error||'ไม่พบไฟล์');const bin=atob(d.data),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);await dl.save({filename:e[w+'Name']||d.name,data:new Blob([u],{type:d.mime})});setMsg('ดาวน์โหลดแล้ว')}catch(x){setMsg('ดาวน์โหลดไม่สำเร็จ: '+(x.message||x))}return}
+let name=e[w+'Name']||(w==='letter'?'หนังสือเชิญวิทยากร':'รายชื่อผู้เข้าอบรม');
  try{const r=await fetch('/_blob/'+bid);if(!r.ok)throw 0;const b=await r.blob();if(!/\.\w{2,5}$/.test(name))name+=({'application/pdf':'.pdf','image/png':'.png','image/jpeg':'.jpg','text/csv':'.csv','text/plain':'.txt'}[b.type]||'');await dl.save({filename:name,data:b})}catch(x){window.open('/_blob/'+bid,'_blank')}};
 window.openEv=ids=>{popup=ids;render()};
 window.closePop=()=>{popup=null;render()};
@@ -155,7 +167,11 @@ window.aiRead=async file=>{letterFile=file||null;if(!file)return;const s=$('#ai'
  FL().forEach(([k])=>{if(r[k]!=null){if(k==='speaker')$('#spk').innerHTML=spInputs(Array.isArray(r[k])?r[k].join(','):r[k]);else if($('#d_'+k))$('#d_'+k).value=r[k]}});s.textContent='✅ AI กรอกข้อมูลให้แล้ว กรุณาตรวจทานก่อนบันทึก'}catch(e){s.textContent='อ่านไม่สำเร็จ: '+(e.message||e.code)}};
 window.saveEv=async()=>{const o={...draft};FL().forEach(([k])=>o[k]=k==='speaker'?[...document.querySelectorAll('.spk')].map(i=>i.value.trim()).filter(Boolean).join(', '):$('#d_'+k).value.trim());o.notes=$('#d_notes').value;
  {const miss=FL().filter(x=>x[4].r&&!o[x[0]]).map(x=>x[1].replace(' *',''));if(miss.length)return setMsg('กรุณากรอก: '+miss.join(', '))}if(!await askC(draft.id?'ยืนยันการบันทึกการแก้ไขกิจกรรม?':'ยืนยันการบันทึกกิจกรรมใหม่?',(o.topic||'')+(o.date?'\n'+fd(o.date):''),'บันทึก',false))return;
- try{const f=rosterFile||$('#ros').files[0],lf=letterFile;if((f||lf)&&!assets)return setMsg('ระบบอัปโหลดไฟล์ไม่พร้อมใช้งาน (ต้องใช้บัญชีที่มีสิทธิ์ผู้ร่วมแก้ไข)');if(lf){o.letterId=(await assets.upload(lf)).id;o.letterName=lf.name}if(f){o.rosterId=(await assets.upload(f)).id;o.rosterName=f.name}
+ try{const f=rosterFile||$('#ros').files[0],lf=letterFile;if((f||lf)&&!assets&&!DRIVE_API)return setMsg('ยังไม่ได้ตั้งค่าที่เก็บไฟล์ (Google Drive) — ดูวิธีตั้งค่าที่ DRIVE_API ในโค้ด');
+ const folder=(o.date||'')+' '+(o.topic||'');
+ if(lf){const r=await upFile(lf,'letter',folder,o.letterId);o.letterId=r.id;o.letterName=lf.name;if(r.folder)o.driveFolder=r.folder}
+ if(f){const r=await upFile(f,'roster',folder,o.rosterId);o.rosterId=r.id;o.rosterName=f.name;if(r.folder)o.driveFolder=r.folder}
+ if(!db)return setMsg('อัปโหลดไฟล์ขึ้น Google Drive แล้ว แต่ยังไม่ได้เชื่อมต่อฐานข้อมูลสำหรับเก็บกิจกรรม (ขั้นตอนถัดไป)');
  const id=o.id||('e'+Date.now());delete o.id;await db.doc('events/'+id).set(o);draft={};letterFile=rosterFile=null;tab='cal';setMsg('บันทึกแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}};
 /* ---------- Dashboard ---------- */
 const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
@@ -291,7 +307,7 @@ function vAdm(){return `<div class="card"><h3>แอดมิน</h3><div class=
 window.sG=async()=>{try{await db.doc('settings/gas').set({url:$('#g1').value.trim(),token:$('#g2').value.trim()});setMsg('บันทึกการเชื่อมต่อแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
 window.auto=()=>{$('#a4').value=$('#a3').value.split('@')[0].toLowerCase()};
 window.eA=id=>{const a=admins.find(x=>x.id===id);$('#a1').value=a.firstName;$('#a2').value=a.lastName;$('#a3').value=a.email;$('#a4').value=a.username;$('#a5').value='';$('#a4').dataset.old=id;scrollTo(0,document.body.scrollHeight)};
-window.dA=async id=>{if(admins.length<2)return setMsg('ต้องเหลือแอดมินอย่างน้อย 1 คน');if(await askC('ยืนยันการลบแอดมิน?','ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้อีก'))try{await db.doc('admins/'+id).delete()}catch(e){setMsg('ลบไม่สำเร็จ')}};
+window.dA=async id=>{if(id==='piyapsu')return setMsg('ไม่สามารถลบแอดมินหลัก (piyapsu) ได้');if(admins.length<2)return setMsg('ต้องเหลือแอดมินอย่างน้อย 1 คน');if(await askC('ยืนยันการลบแอดมิน?','ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้อีก'))try{await db.doc('admins/'+id).delete()}catch(e){setMsg('ลบไม่สำเร็จ')}};
 window.sA=async()=>{const a={firstName:$('#a1').value.trim(),lastName:$('#a2').value.trim(),email:$('#a3').value.trim(),username:$('#a4').value.trim().toLowerCase()},old=$('#a4').dataset.old;
  if(!a.firstName||!a.email||!a.username)return setMsg('กรุณากรอกข้อมูลให้ครบ');if(speakers.some(x=>x.username===a.username))return setMsg('Username นี้ถูกใช้แล้ว (มีในรายชื่อวิทยากร)');if(!await askC(old?'ยืนยันการบันทึกการแก้ไขแอดมิน?':'ยืนยันการเพิ่มแอดมิน?',a.firstName+' '+a.lastName+' ('+a.username+')','บันทึก',false))return;const pw=$('#a5').value||(old?null:a.username+'1234');
  if(pw)a.pw=await sha(pw);else a.pw=admins.find(x=>x.id===old).pw;
