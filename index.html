@@ -84,7 +84,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r20';
+const VER='2026-10-15 r21';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec',DRIVE_TOKEN='KKUL1188945';
@@ -271,6 +271,7 @@ function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r
  <select id="ft"><option value="">ทุกหัวข้อ</option>${tops.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
  <select id="fsp"><option value="">วิทยากรทุกคน</option>${spks.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
  <input id="fs" placeholder="ค้นหาวิทยากร/หัวข้อ" value="${esc(F.s)}">
+ <button onclick="clrF()" title="ล้างตัวกรองทั้งหมด">↺ ล้างตัวกรอง</button>
  <button class="dx" onclick="xl()">⬇ ดาว์โหลด Excel</button><button class="dp" onclick="pdf()">⬇ ดาว์โหลด PDF</button></div></div>
  <div id="rep">${kpis(ev,tot)}
  <div class="card"><b class="ct">📈 เปรียบเทียบจำนวนการอบรมรายปี</b>${yearCols(evAll)}</div>
@@ -280,6 +281,7 @@ function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r
  <div class="card"><div><div><b class="ct">กิจกรรมล่าสุด · ${per}</b>${ev.slice().sort((x,y)=>y.date.localeCompare(x.date)).slice(0,6).map(e=>`<div class="li"><b>${fd(e.date)}</b><br><span>${esc(e.topic)}</span></div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'}</div></div></div>
  <div class="card tw"><table><tr><th>วันที่</th><th>เวลา</th><th>หัวข้อ</th><th>วิทยากร</th><th>สถานที่</th><th>จำนวน</th><th>หน่วยงาน</th><th>ประเภทการอบรม</th><th>หลักสูตร</th></tr>${ev.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<tr><td>${fd(e.date)}</td><td>${esc(e.startTime?e.startTime+(e.endTime?'–'+e.endTime:''):'')}</td><td>${esc(e.topic)}</td><td>${esc(e.speaker)}</td><td>${esc(e.location)}</td><td>${esc(e.attendees)}</td><td>${esc(e.faculty)}</td><td>${esc(e.trainType)}</td><td>${esc(e.courseType)}</td></tr>`).join('')}</table></div></div>`}
 function bindDash(){[['fp','p'],['fy','y'],['fm','m'],['fq','q'],['ff','fac'],['ft','t'],['fsp','sp'],['ftt','tt'],['fot','ot'],['fat','at'],['fai','ai'],['fct','ct'],['fa','from'],['fb','to']].forEach(([i,k])=>{const el=$('#'+i);el.value=F[k];el.onchange=()=>{F[k]=el.value;F.last=k;render()}});const s=$('#fs');s.onchange=()=>{F.s=s.value;render()}}
+window.clrF=()=>{F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',ai:'',from:'',to:''};render()};
 window.xl=async()=>{const ev=filt().map(e=>({'วันที่':fd(e.date),'เวลา':e.startTime?e.startTime+(e.endTime?'–'+e.endTime:''):'','หัวข้อ':e.topic,'วิทยากร':e.speaker,'สถานที่':e.location,'จำนวนผู้เข้าร่วม':+e.attendees||0,'หน่วยงาน':e.faculty,'ประเภทการอบรม':e.trainType||'','ประเภทหลักสูตร':e.courseType||'','ส่วนงาน':e.orgType||'','ประเภทผู้เข้าร่วม':e.attType||'','เนื้อหาเกี่ยวกับ AI':e.aiRelated||'',...Object.fromEntries(cfg().filter(f=>!f.b&&!f.h).map(f=>[f.l,e[f.k]||''])),'หมายเหตุ':e.notes||''}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ev),'สรุป');
  try{await dl.save({filename:'สรุปกิจกรรม.xlsx',data:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])})}catch(e){setMsg('ดาวน์โหลดไม่สำเร็จ: '+(e.code||e.message))}};
