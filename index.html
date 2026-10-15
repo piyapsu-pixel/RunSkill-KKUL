@@ -102,6 +102,7 @@ async function init(){
   if(!FB){db.collection('admins').onSnapshot(s=>{admins=withDef(s.docs.map(d=>({id:d.id,...d.data()})));render()});
   db.collection('speakers').onSnapshot(s=>{speakers=s.docs.map(d=>({id:d.id,...d.data()}));render()})}
   db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;render()},()=>{})}catch(e){}}
+ if(!db)msg=FB_CFG?(typeof firebase==='undefined'?'⚠️ โหลด Firebase SDK ไม่สำเร็จ — ตรวจอินเทอร์เน็ตหรือตัวบล็อกโฆษณา แล้วกด Ctrl+F5':'⚠️ เชื่อมต่อ Firebase ไม่สำเร็จ'):'⚠️ ยังไม่ได้เปิดใช้ฐานข้อมูล — ไฟล์นี้ยังไม่มีค่า FB_CFG (กรุณาอัปโหลดไฟล์เวอร์ชันล่าสุดขึ้น GitHub แล้วกด Ctrl+F5)';
  render()}
 /* ---------- Firebase auth ---------- */
 async function faLogin(){const u=$('#lu').value.trim().toLowerCase(),pw=$('#lp').value;
