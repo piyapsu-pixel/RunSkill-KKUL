@@ -85,7 +85,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r23';
+const VER='2026-10-15 r24';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec';
@@ -172,7 +172,14 @@ window.openDay=k=>{selDay=k;const ids=calEv().filter(e=>e.date<=k&&(e.endDate||e
 function popHtml(){if(!popup)return'';const evs=popup.map(id=>events.find(e=>e.id===id)).filter(Boolean);if(!evs.length){popup=null;return''}
  return `<div class="mdl" onclick="if(event.target===this)closePop()"><div class="mb pop"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;margin-bottom:8px"><h3 style="margin:0">${evs.length>1?'กิจกรรมวันที่ '+fd(evs[0].date)+' ('+evs.length+' รายการ)':'รายละเอียดการอบรม'}</h3><button onclick="closePop()" aria-label="ปิด">✕</button></div>${evs.map(detail).join('<hr>')}</div></div>`}
 window.calGo=()=>{cur=new Date(+$('#cy').value,+$('#cm').value,1);render()};
-window.delEv=async id=>{if(await askC('ยืนยันการลบกิจกรรม?',((events.find(x=>x.id===id)||{}).topic||'')+'\nการลบไม่สามารถย้อนกลับได้'))try{await db.doc('events/'+id).delete();popup=null;setMsg('ลบกิจกรรมแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}};
+const folderId=u=>{const m=String(u||'').match(/folders\/([A-Za-z0-9_-]+)/);return m?m[1]:''};
+async function trashFolders(evs){const ids=new Set(evs.map(e=>e.id));let ok=0,fail=0;if(!DRIVE_API)return{ok,fail};
+ const urls=[...new Set(evs.map(e=>e.driveFolder).filter(Boolean))].filter(u=>!events.some(x=>!ids.has(x.id)&&x.driveFolder===u));
+ for(const u of urls){try{const d=await drivePost({action:'trashFolder',folderId:folderId(u)});d.ok?ok++:fail++}catch(e){fail++}}return{ok,fail}}
+const delNote=r=>r.ok?' และย้ายโฟลเดอร์ใน Google Drive ไปถังขยะแล้ว':r.fail?' แต่ย้ายโฟลเดอร์ใน Google Drive ไปถังขยะไม่สำเร็จ (กรุณาลบเอง)':'';
+window.delEv=async id=>{const ev=events.find(x=>x.id===id);if(!ev)return;
+ if(await askC('ยืนยันการลบกิจกรรม?',(ev.topic||'')+'\nการลบไม่สามารถย้อนกลับได้'+(ev.driveFolder&&DRIVE_API?'\nโฟลเดอร์ไฟล์แนบใน Google Drive จะถูกย้ายไปถังขยะด้วย':'')))
+  {busy('กำลังลบ…');try{await db.doc('events/'+id).delete();const r=await trashFolders([ev]);popup=null;setMsg('ลบกิจกรรมแล้ว'+delNote(r))}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}}};
 window.editEv=id=>{popup=null;draft={...events.find(e=>e.id===id)};tab='form';msg=me?'':'กรุณาเข้าสู่ระบบแอดมินเพื่อแก้ไขกิจกรรม (แก้ไขได้เฉพาะแอดมิน)';render()};
 /* ---------- Form + AI ---------- */
 const DEF=[{k:'date',l:'วันที่จัดอบรม (เริ่ม)',t:'date',r:1,b:1},{k:'endDate',l:'วันที่สิ้นสุด',t:'date',b:1},{k:'startTime',l:'เวลาเริ่ม',t:'time',b:1},{k:'endTime',l:'เวลาสิ้นสุด',t:'time',b:1},{k:'speaker',l:'ชื่อวิทยากร',t:'text',b:1},{k:'topic',l:'หัวข้อการอบรม',t:'text',r:1,b:1},{k:'location',l:'สถานที่',t:'text',b:1},{k:'attendees',l:'จำนวนผู้เข้าร่วม (คน)',t:'number',b:1},{k:'faculty',l:'คณะ/หน่วยงานที่จัดกิจกรรม',t:'text',b:1},{k:'trainType',l:'ประเภทการอบรม',t:'select',o:['ในตาราง','นอกตาราง'],b:1},{k:'courseType',l:'ประเภทหลักสูตร',t:'select',o:['Academic Skills','Occupation Skills'],b:1},{k:'orgType',l:'ส่วนงาน',t:'select',o:['ภายใน มข.','ภายนอก มข.'],b:1},{k:'attType',l:'ประเภทผู้เข้าร่วมอบรม',t:'select',o:['นักเรียน','นักศึกษา มข.','บุคลากร มข.','บุคคลภายนอก มข.'],b:1},{k:'aiRelated',l:'เนื้อหาเกี่ยวข้องกับการใช้ AI',t:'radio',o:['ใช่','ไม่'],b:1}];
@@ -348,7 +355,7 @@ function vUsers(){const opt=v=>PERM.map(([k,n])=>`<option value="${k}" ${v===k?'
 let bulkSel=new Set(),bulkAi={},bulkOnly=true;
 function vBulk(){const list=events.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).filter(e=>!bulkOnly||!e.aiRelated);
  const rd=(id,cur,v)=>`<label style="display:inline-flex;gap:5px;align-items:center;color:var(--tx);margin:0 10px 0 0"><input type="radio" name="ba_${id}" value="${v}" ${cur===v?'checked':''} onchange="bkAi('${id}','${v}')" style="width:auto;margin:0">${v}</label>`;
- return `<div class="card"><h3>แก้ไข/ลบหลายรายการ</h3><p class="mu">ใช้ระบุค่า "เนื้อหาเกี่ยวข้องกับ AI" ให้กิจกรรมเก่าได้ทีละหลายรายการ หรือเลือกกิจกรรมเพื่อลบ (ไฟล์ในโฟลเดอร์ Google Drive จะไม่ถูกลบตามกิจกรรม) แนะนำให้สำรองข้อมูลก่อนลบ</p>
+ return `<div class="card"><h3>แก้ไข/ลบหลายรายการ</h3><p class="mu">ใช้ระบุค่า "เนื้อหาเกี่ยวข้องกับ AI" ให้กิจกรรมเก่าได้ทีละหลายรายการ หรือเลือกกิจกรรมเพื่อลบ (เมื่อลบกิจกรรม โฟลเดอร์ไฟล์แนบใน Google Drive จะถูกย้ายไปถังขยะด้วย) แนะนำให้สำรองข้อมูลก่อนลบ</p>
  <div class="row" style="margin-bottom:10px"><label style="display:flex;gap:6px;align-items:center;color:var(--tx);margin:0"><input type="checkbox" ${bulkOnly?'checked':''} onchange="bulkOnly=this.checked;render()" style="width:auto;margin:0">แสดงเฉพาะที่ยังไม่ระบุเนื้อหา AI</label><span class="mu">${list.length} รายการ</span></div>
  <div class="tw"><table><tr><th><input type="checkbox" onchange="bkAll(this.checked)" style="width:auto"></th><th>วันที่</th><th>หัวข้อ</th><th>วิทยากร</th><th>เนื้อหาเกี่ยวกับ AI</th></tr>
  ${list.map(e=>{const cur=bulkAi[e.id]!==undefined?bulkAi[e.id]:(e.aiRelated||'');return `<tr><td><input type="checkbox" ${bulkSel.has(e.id)?'checked':''} onchange="bkSel('${e.id}',this.checked)" style="width:auto"></td><td>${fd(e.date)}</td><td>${esc(e.topic)}</td><td>${esc(e.speaker)}</td><td style="white-space:nowrap">${rd(e.id,cur,'ใช่')}${rd(e.id,cur,'ไม่')}</td></tr>`}).join('')||'<tr><td colspan="5" class="mu">ไม่มีรายการ</td></tr>'}</table></div>
@@ -362,8 +369,8 @@ window.bkSaveAi=async()=>{const ids=Object.keys(bulkAi);if(!ids.length)return se
  try{for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(id=>{const e=events.find(x=>x.id===id);if(!e)return null;const o={...e,aiRelated:bulkAi[id]};delete o.id;return db.doc('events/'+id).set(o)}));bulkAi={};setMsg('บันทึกแล้ว')}
  catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}};
 window.bkDel=async()=>{const ids=[...bulkSel].filter(id=>events.some(e=>e.id===id));if(!ids.length)return setMsg('ยังไม่ได้เลือกรายการที่จะลบ');
- if(!await askC('ยืนยันการลบ '+ids.length+' กิจกรรม?','กิจกรรมที่เลือกจะถูกลบถาวร (กู้คืนได้จากไฟล์สำรองเท่านั้น)\nไฟล์ในโฟลเดอร์ Google Drive จะไม่ถูกลบ'))return;busy('กำลังลบ…');
- try{for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(id=>db.doc('events/'+id).delete()));ids.forEach(i=>{bulkSel.delete(i);delete bulkAi[i]});setMsg('ลบแล้ว '+ids.length+' กิจกรรม')}
+ if(!await askC('ยืนยันการลบ '+ids.length+' กิจกรรม?','กิจกรรมที่เลือกจะถูกลบถาวร (กู้คืนได้จากไฟล์สำรองเท่านั้น)'+(DRIVE_API?'\nโฟลเดอร์ไฟล์แนบใน Google Drive ของกิจกรรมเหล่านี้จะถูกย้ายไปถังขยะด้วย':'')))return;busy('กำลังลบ…');const evs=ids.map(id=>events.find(e=>e.id===id));
+ try{for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(id=>db.doc('events/'+id).delete()));ids.forEach(i=>{bulkSel.delete(i);delete bulkAi[i]});const r=await trashFolders(evs);setMsg('ลบแล้ว '+ids.length+' กิจกรรม'+delNote(r))}
  catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}};
 window.bkJson=async()=>{const data={app:'RunSkill-KKUL',version:VER,exportedAt:new Date().toISOString(),events:events.map(e=>({...e})),formConfig:formCfg||null,users:users.filter(u=>!u.builtin).map(u=>{const o={...u};delete o.pw;return o})};
  try{await dl.save({filename:'สำรองข้อมูล_'+TODAY()+'.json',data:new Blob([JSON.stringify(data,null,1)],{type:'application/json'})});toast('✅ ดาวน์โหลดไฟล์สำรองแล้ว ('+events.length+' กิจกรรม)',4000)}catch(e){toast('⚠️ '+(e.message||e),5000)}};
