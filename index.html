@@ -85,7 +85,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r24';
+const VER='2026-10-15 r25';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec';
@@ -126,7 +126,7 @@ function render(){
  const adT=tab==='usr'||tab==='fb'||tab==='bulk';if(me&&me.role!=='admin'&&adT){tab='cal';msg='เมนูนี้สำหรับแอดมินเท่านั้น'}const need=(tab==='form'||adT)&&!me;if(need)tab='login';$('#pt').textContent={cal:'ปฏิทินกิจกรรม',dash:'Dashboard',form:'จัดการอบรม',usr:'จัดการผู้ใช้งาน',bulk:'แก้ไข/ลบหลายรายการ',fb:'แก้ไขแบบฟอร์ม',login:'เข้าสู่ระบบ'}[tab];
  $('#m').innerHTML=(tab==='cal'||tab==='dash'?hero():'')+(msg?`<div class="msg">${esc(msg)}</div>`:'')+({cal:vCal,dash:vDash,form:vForm,usr:vUsers,bulk:vBulk,fb:vFb,login:vLogin}[tab])();
  if(tab==='dash')bindDash()}
-window.go=k=>{tab=k;msg='';popup=null;if(k==='fb')fbDraft=JSON.parse(JSON.stringify(cfg()));document.body.classList.remove('sbo');render()};
+window.go=k=>{tab=k;msg='';popup=null;if(k==='form')warmDrive();if(k==='fb')fbDraft=JSON.parse(JSON.stringify(cfg()));document.body.classList.remove('sbo');render()};
 /* ---------- Login ---------- */
 function vLogin(){return `<div class="card" style="max-width:380px;margin:auto"><h3>เข้าสู่ระบบ</h3><p class="mu">สำหรับแอดมินและวิทยากร — ใช้จัดการอบรม (เฉพาะแอดมินจัดการวิทยากรและแอดมินได้)</p>
 <label>Username<input id="lu" autocomplete="username"></label><br><label>Password<input id="lp" type="password" autocomplete="current-password"></label><br><button class="p" onclick="doLogin()">เข้าสู่ระบบ</button></div>`}
@@ -180,7 +180,7 @@ const delNote=r=>r.ok?' และย้ายโฟลเดอร์ใน Goog
 window.delEv=async id=>{const ev=events.find(x=>x.id===id);if(!ev)return;
  if(await askC('ยืนยันการลบกิจกรรม?',(ev.topic||'')+'\nการลบไม่สามารถย้อนกลับได้'+(ev.driveFolder&&DRIVE_API?'\nโฟลเดอร์ไฟล์แนบใน Google Drive จะถูกย้ายไปถังขยะด้วย':'')))
   {busy('กำลังลบ…');try{await db.doc('events/'+id).delete();const r=await trashFolders([ev]);popup=null;setMsg('ลบกิจกรรมแล้ว'+delNote(r))}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}}};
-window.editEv=id=>{popup=null;draft={...events.find(e=>e.id===id)};tab='form';msg=me?'':'กรุณาเข้าสู่ระบบแอดมินเพื่อแก้ไขกิจกรรม (แก้ไขได้เฉพาะแอดมิน)';render()};
+window.editEv=id=>{popup=null;warmDrive();draft={...events.find(e=>e.id===id)};tab='form';msg=me?'':'กรุณาเข้าสู่ระบบแอดมินเพื่อแก้ไขกิจกรรม (แก้ไขได้เฉพาะแอดมิน)';render()};
 /* ---------- Form + AI ---------- */
 const DEF=[{k:'date',l:'วันที่จัดอบรม (เริ่ม)',t:'date',r:1,b:1},{k:'endDate',l:'วันที่สิ้นสุด',t:'date',b:1},{k:'startTime',l:'เวลาเริ่ม',t:'time',b:1},{k:'endTime',l:'เวลาสิ้นสุด',t:'time',b:1},{k:'speaker',l:'ชื่อวิทยากร',t:'text',b:1},{k:'topic',l:'หัวข้อการอบรม',t:'text',r:1,b:1},{k:'location',l:'สถานที่',t:'text',b:1},{k:'attendees',l:'จำนวนผู้เข้าร่วม (คน)',t:'number',b:1},{k:'faculty',l:'คณะ/หน่วยงานที่จัดกิจกรรม',t:'text',b:1},{k:'trainType',l:'ประเภทการอบรม',t:'select',o:['ในตาราง','นอกตาราง'],b:1},{k:'courseType',l:'ประเภทหลักสูตร',t:'select',o:['Academic Skills','Occupation Skills'],b:1},{k:'orgType',l:'ส่วนงาน',t:'select',o:['ภายใน มข.','ภายนอก มข.'],b:1},{k:'attType',l:'ประเภทผู้เข้าร่วมอบรม',t:'select',o:['นักเรียน','นักศึกษา มข.','บุคลากร มข.','บุคคลภายนอก มข.'],b:1},{k:'aiRelated',l:'เนื้อหาเกี่ยวข้องกับการใช้ AI',t:'radio',o:['ใช่','ไม่'],b:1}];
 const LOCK=['date','endDate','speaker','attendees'];
@@ -189,11 +189,11 @@ const cfg=()=>{const st=formCfg&&Array.isArray(formCfg.fields)&&formCfg.fields.l
 const FL=()=>cfg().filter(f=>!f.h).map(f=>[f.k,f.l+(f.r?' *':''),f.t,f.o||[],f]);
 const customLines=e=>cfg().filter(f=>!f.b&&e[f.k]).map(f=>`<br>▫️ ${esc(f.l)}: ${esc(e[f.k])}`).join('');
 function vForm(){return `<div class="card"><h3>${draft.id?'แก้ไขการอบรม':'บันทึกหนังสือเชิญวิทยากร'}</h3>
-<label>แนบหนังสือเชิญวิทยากร (PDF / PNG / JPG)<input type="file" id="f" accept=".pdf,image/png,image/jpeg" onchange="letterFile=this.files[0]||null"></label>${draft.letterId?'<p class="mu">มีไฟล์หนังสือเชิญแนบแล้ว (อัปโหลดใหม่เพื่อแทนที่)</p>':''}<br>
+<label>แนบหนังสือเชิญวิทยากร (PDF / PNG / JPG)<input type="file" id="f" accept=".pdf,image/png,image/jpeg" onchange="letterFile=this.files[0]||null;warmDrive()"></label>${draft.letterId?'<p class="mu">มีไฟล์หนังสือเชิญแนบแล้ว (อัปโหลดใหม่เพื่อแทนที่)</p>':''}<br>
 <div class="grid">${FL().map(([k,l,t,o])=>k==='speaker'?`<div><div style="font-size:13px;color:var(--mu);margin-bottom:3px">${l}</div><div id="spk">${spInputs(draft.speaker)}</div><button type="button" onclick="addSp()" style="margin-top:6px">➕ เพิ่มวิทยากร</button></div>`:t==='select'?`<label>${l}<select id="d_${k}"><option value="">— เลือก —</option>${o.map(v=>`<option ${draft[k]===v?'selected':''}>${v}</option>`).join('')}</select></label>`:t==='radio'?`<div><div style="font-size:13px;color:var(--mu);margin-bottom:8px">${l}</div><div class="row" style="gap:22px">${o.map(v=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);font-size:15px;margin:0"><input type="radio" name="d_${k}" value="${esc(v)}" ${draft[k]===v?'checked':''} style="width:auto;margin:0">${esc(v)}</label>`).join('')}</div></div>`:t==='textarea'?`<label>${l}<textarea id="d_${k}" rows="2">${esc(draft[k])}</textarea></label>`:`<label>${l}<input type="${t}" id="d_${k}" list="dl_${k}" value="${esc(draft[k])}"></label>`).join('')}</div><br>
 ${['topic','speaker','faculty','location'].map(k=>`<datalist id="dl_${k}">${[...new Set(events.flatMap(e=>k==='speaker'?spl(e[k]):[e[k]]).filter(Boolean))].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join('')}
 <label>หมายเหตุ<textarea id="d_notes" rows="2">${esc(draft.notes)}</textarea></label><br>
-<label>อัปโหลดรายชื่อผู้เข้าร่วม (CSV/PDF/ข้อความ)<input type="file" id="ros" onchange="rosterFile=this.files[0]"></label>${draft.rosterId?'<p class="mu">มีไฟล์รายชื่อแนบแล้ว</p>':''}<br>
+<label>อัปโหลดรายชื่อผู้เข้าร่วม (CSV/PDF/ข้อความ)<input type="file" id="ros" onchange="rosterFile=this.files[0];warmDrive()"></label>${draft.rosterId?'<p class="mu">มีไฟล์รายชื่อแนบแล้ว</p>':''}<br>
 <button class="p" onclick="saveEv()">บันทึก</button> <button onclick="draft={};render()">ล้างฟอร์ม</button></div>`}
 let saving=false;
 function busy(t){let o=document.getElementById('busy');if(!t){if(o)o.remove();return}if(!o){o=document.createElement('div');o.id='busy';o.className='mdl';document.body.appendChild(o)}o.innerHTML=`<div class="mb" style="text-align:center"><div class="spin"></div><p style="margin:14px 0 0">${esc(t)}</p></div>`}
@@ -206,17 +206,28 @@ window.saveEv=async()=>{if(saving)return;const o={...draft};FL().forEach(([k,l,t
  const id=o.id||('e'+Date.now());delete o.id;
  let slow=false;await Promise.race([db.doc('events/'+id).set(o),new Promise(r=>setTimeout(()=>{slow=true;r()},10000))]);
  draft={};letterFile=rosterFile=null;tab='cal';
- if(hasF){setMsg(slow?'⚠️ ส่งข้อมูลไปเซิร์ฟเวอร์ยังไม่เสร็จ (เครือข่ายช้า) กรุณารอสักครู่':'บันทึกกิจกรรมแล้ว — กำลังอัปโหลดไฟล์ไป Google Drive ในพื้นหลัง');bgUpload(id,o,lf,f)}
+ if(hasF){render();setMsg(await bgUpload(id,o,lf,f))}
  else setMsg(slow?'⚠️ ส่งข้อมูลไปเซิร์ฟเวอร์ยังไม่เสร็จ (เครือข่ายช้า) กรุณารอสักครู่ และอย่ารีเฟรชหน้า':'บันทึกแล้ว')}
  catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}
  finally{saving=false;busy(false)}};
 function toast(t,ms){let o=document.getElementById('toast');if(!t){if(o)o.remove();return}if(!o){o=document.createElement('div');o.id='toast';document.body.appendChild(o)}o.textContent=t;clearTimeout(o._t);if(ms)o._t=setTimeout(()=>o.remove(),ms)}
+async function shrink(file){if(!/^image\/(jpeg|png)$/.test(file.type)||file.size<1200000)return file;
+ try{const bmp=await createImageBitmap(file),sc=Math.min(1,2200/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.82));if(!blob||blob.size>=file.size)return file;
+  return new File([blob],file.name.replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'})}catch(e){return file}}
+let _warm=0;
+function warmDrive(){if(!DRIVE_API||!fAuth||!fAuth.currentUser||Date.now()-_warm<240000)return;_warm=Date.now();drivePost({action:'ping'}).catch(()=>{_warm=0})}
 async function bgUpload(id,o,lf,f){const folder=(o.date||'')+' '+(o.topic||''),u={};
- toast('⏳ กำลังอัปโหลดไฟล์ไป Google Drive… (กรุณาอย่าปิดหรือรีเฟรชหน้า)');
- try{if(lf){const r=await upFile(lf,'letter',folder,o.letterId);u.letterId=r.id;u.letterName=lf.name;if(r.folder)u.driveFolder=r.folder}
-  if(f){const r=await upFile(f,'roster',folder,o.rosterId);u.rosterId=r.id;u.rosterName=f.name;if(r.folder)u.driveFolder=r.folder}
-  await db.doc('events/'+id).update(u);toast('✅ อัปโหลดไฟล์ขึ้น Google Drive เรียบร้อยแล้ว',5000)}
- catch(e){toast('⚠️ บันทึกกิจกรรมแล้ว แต่อัปโหลดไฟล์ไม่สำเร็จ: '+(e.message||e)+' — เปิดแก้ไขกิจกรรมแล้วแนบไฟล์อีกครั้ง',12000)}}
+ busy('กำลังอัปโหลดไฟล์ไป Google Drive… (กรุณาอย่าปิดหรือรีเฟรชหน้า)');
+ try{if(DRIVE_API){const items=[];if(lf)items.push({kind:'letter',file:lf,old:o.letterId});if(f)items.push({kind:'roster',file:f,old:o.rosterId});
+   const prep=await Promise.all(items.map(async it=>{const fl=await shrink(it.file);return{kind:it.kind,fl,fileName:fl.name,mime:fl.type||'application/octet-stream',data:await b64(fl),replaceId:String(it.old||'').startsWith('drive:')?it.old.slice(6):''}}));
+   const d=await drivePost({action:'uploadMany',folder,files:prep.map(x=>({kind:x.kind,fileName:x.fileName,mime:x.mime,data:x.data,replaceId:x.replaceId}))});
+   if(!d.ok)throw new Error(d.error||'อัปโหลดไม่สำเร็จ');
+   d.files.forEach((r,i)=>{const k=prep[i].kind;u[k+'Id']='drive:'+r.fileId;u[k+'Name']=prep[i].fl.name});u.driveFolder=d.folderUrl}
+  else{if(lf){const r=await upFile(lf,'letter',folder,o.letterId);u.letterId=r.id;u.letterName=lf.name}if(f){const r=await upFile(f,'roster',folder,o.rosterId);u.rosterId=r.id;u.rosterName=f.name}}
+  await db.doc('events/'+id).update(u);return '✅ บันทึกกิจกรรมและอัปโหลดไฟล์เรียบร้อยแล้ว'}
+ catch(e){return '⚠️ บันทึกกิจกรรมแล้ว แต่อัปโหลดไฟล์ไม่สำเร็จ: '+(e.message||e)+' — เปิดแก้ไขกิจกรรมแล้วแนบไฟล์อีกครั้ง'}}
 /* ---------- Dashboard ---------- */
 const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
 function filt(){return events.filter(e=>{const[y,m]=e.date.split('-').map(Number);if(F.p==='all'){}else if(F.p==='range'){if(F.from&&(e.endDate||e.date)<F.from)return false;if(F.to&&e.date>F.to)return false}else if(y!==+F.y)return false;
