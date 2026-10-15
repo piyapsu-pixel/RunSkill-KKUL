@@ -85,7 +85,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r27';
+const VER='2026-10-15 r28';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec';
@@ -366,7 +366,7 @@ function vUsers(){const opt=v=>PERM.map(([k,n])=>`<option value="${k}" ${v===k?'
  <div class="card"><h3 id="uh">เพิ่ม/แก้ไขผู้ใช้งาน</h3><div class="grid"><label>ชื่อจริง<input id="u1"></label><label>นามสกุล<input id="u2"></label><label>E-mail<input id="u3" oninput="autoU()"></label><label>Username<input id="u4"></label><label>Password (เว้นว่าง = Username+1234 / ตอนแก้ไขเว้นว่าง = ไม่เปลี่ยน)<input id="u5" type="text"></label><label>สิทธิ์<select id="u6">${opt('speaker')}</select></label></div><br><button class="p" onclick="saveUser()">บันทึก</button> <button onclick="render()">ล้างฟอร์ม</button></div>
  <div class="card"><h3>💾 สำรองและกู้คืนข้อมูล</h3><p class="mu">แนะนำให้สำรองอย่างน้อยปีละครั้ง และก่อนทำรายงานประจำปี เก็บไฟล์ไว้ในที่ปลอดภัย ไฟล์สำรองมีข้อมูลกิจกรรม การตั้งค่าแบบฟอร์ม และรายชื่อผู้ใช้ (ไม่รวมรหัสผ่านและไฟล์แนบที่อยู่ใน Google Drive)</p><div class="row"><button class="p" onclick="bkJson()">⬇ สำรองข้อมูลทั้งหมด (JSON)</button><button onclick="bkXlsx()">⬇ ตารางกิจกรรมทั้งหมด (Excel)</button><label class="bkr">↥ กู้คืนจากไฟล์สำรอง<input type="file" accept=".json" onchange="bkRestore(this)" hidden></label></div></div>`}
 /* ---------- Bulk edit / delete events ---------- */
-let bulkSel=new Set(),bulkAi={},bulkOnly=true;
+let bulkSel=new Set(),bulkAi={},bulkOnly=false;
 function vBulk(){const list=events.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).filter(e=>!bulkOnly||!e.aiRelated);
  const rd=(id,cur,v)=>`<label style="display:inline-flex;gap:5px;align-items:center;color:var(--tx);margin:0 10px 0 0"><input type="radio" name="ba_${id}" value="${v}" ${cur===v?'checked':''} onchange="bkAi('${id}','${v}')" style="width:auto;margin:0">${yn(v)}${v}</label>`;
  return `<div class="card"><h3>แก้ไข/ลบหลายรายการ</h3><p class="mu">ใช้ระบุค่า "เนื้อหาเกี่ยวข้องกับ AI" ให้กิจกรรมเก่าได้ทีละหลายรายการ หรือเลือกกิจกรรมเพื่อลบ (เมื่อลบกิจกรรม โฟลเดอร์ไฟล์แนบใน Google Drive จะถูกย้ายไปถังขยะด้วย) แนะนำให้สำรองข้อมูลก่อนลบ</p>
