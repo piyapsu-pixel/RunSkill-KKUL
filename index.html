@@ -74,7 +74,6 @@ body.nosb #side{margin-left:-268px}
 <div class="ov" onclick="toggleSb()"></div>
 <div id="mw"><div id="top"><button id="hb" onclick="toggleSb()" aria-label="เมนู">☰</button><b id="pt"></b><span style="flex:1"></span><span class="mu" id="dt"></span><button id="lg"></button></div>
 <main id="m"></main></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -85,11 +84,9 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r14';
+const VER='2026-10-15 r16';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
-/* ===== ตั้งค่า AI อ่านหนังสือเชิญ (ขั้นตอนที่ 3) — วาง URL ของ Cloudflare Worker เช่น 'https://runskill-ai.xxxx.workers.dev' ===== */
-const AI_API='';
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec',DRIVE_TOKEN='KKUL1188945';
 const TM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],TD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const DEF_ADMIN={id:'piyapsu',firstName:'Piyaphat',lastName:'Suwankasem',email:'piyapsu@kku.ac.th',username:'piyapsu',pw:'2bdf436177bd99a9b510050176583a132cbfb04b730573d68c5c12f74fc57092',builtin:true};
@@ -160,7 +157,7 @@ function vCal(){const y=cur.getFullYear(),m=cur.getMonth(),first=new Date(y,m,1)
  for(let i=1;i<=n;i++){const k=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`,ev=calEv().filter(e=>e.date<=k&&(e.endDate||e.date)>=k);
   c+=`<div class="d ${selDay===k?'sel':''} ${k===TODAY()?'today':''}" onclick="openDay('${k}')"><b>${i}</b>${ev.slice(0,2).map(e=>`<div class="t" onclick="event.stopPropagation();openEv(['${e.id}'])">${e.startTime?esc(e.startTime)+' ':''}${esc(e.topic)}</div>`).join('')}${ev.length>2?`<div class="mu">+${ev.length-2}</div>`:''}</div>`}
  const ev=selDay?calEv().filter(e=>e.date<=selDay&&(e.endDate||e.date)>=selDay):[];
- return `<div class="card"><div class="row" style="margin-bottom:12px"><span class="mu">🎤 วิทยากร</span><select id="cs" onchange="calSp=this.value;render()" style="flex:1;min-width:200px"><option value="">ทุกวิทยากร</option>${spNames().map(n=>`<option value="${esc(n)}" ${n===calSp?'selected':''}>${esc(n)}</option>`).join('')}</select></div>${calSp?`<div class="msg" style="margin:0 0 12px">แสดงเฉพาะกิจกรรมที่ "${esc(calSp)}" เป็นวิทยากร — ${calEv().length} กิจกรรม</div>`:''}<div class="row"><button onclick="cur=new Date(${y},${m-1},1);render()">◀</button><span style="flex:1;display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><select id="cm" onchange="calGo()">${MF.map((t,i)=>`<option value="${i}" ${i===m?'selected':''}>${t}</option>`).join('')}</select><select id="cy" onchange="calGo()">${[...Array(21)].map((_,i)=>y-10+i).map(v=>`<option value="${v}" ${v===y?'selected':''}>${v+543}</option>`).join('')}</select><button onclick="cur=new Date();render()">วันนี้</button></span><button onclick="cur=new Date(${y},${m+1},1);render()">▶</button></div><br><div class="cal">${c}</div></div>`+popHtml()}
+ return `<div class="card"><div class="row" style="margin-bottom:12px"><span class="mu">🎤 วิทยากร</span><select id="cs" onchange="calSp=this.value;render()" style="flex:1;min-width:200px"><option value="">วิทยากรทุกคน</option>${spNames().map(n=>`<option value="${esc(n)}" ${n===calSp?'selected':''}>${esc(n)}</option>`).join('')}</select></div>${calSp?`<div class="msg" style="margin:0 0 12px">แสดงเฉพาะกิจกรรมที่ "${esc(calSp)}" เป็นวิทยากร — ${calEv().length} กิจกรรม</div>`:''}<div class="row"><button onclick="cur=new Date(${y},${m-1},1);render()">◀</button><span style="flex:1;display:flex;gap:6px;justify-content:center;flex-wrap:wrap"><select id="cm" onchange="calGo()">${MF.map((t,i)=>`<option value="${i}" ${i===m?'selected':''}>${t}</option>`).join('')}</select><select id="cy" onchange="calGo()">${[...Array(21)].map((_,i)=>y-10+i).map(v=>`<option value="${v}" ${v===y?'selected':''}>${v+543}</option>`).join('')}</select><button onclick="cur=new Date();render()">วันนี้</button></span><button onclick="cur=new Date(${y},${m+1},1);render()">▶</button></div><br><div class="cal">${c}</div></div>`+popHtml()}
 function detail(e){return `<p><b>${esc(e.topic)}</b></p><p>📆 ${fd(e.date)}${e.endDate&&e.endDate!==e.date?' – '+fd(e.endDate):''}${e.startTime?`<br>⏰ ${esc(e.startTime)}${e.endTime?' – '+esc(e.endTime):''} น.`:''}<br>🎤 วิทยากร: ${esc(e.speaker)}<br>📍 ${esc(e.location)}<br>🏛 จัดโดย: ${esc(e.faculty)}<br>${e.trainType||e.courseType?`🏷 ${esc(e.trainType||'-')} · ${esc(e.courseType||'-')}<br>`:''}${e.orgType||e.attType?`🏢 ส่วนงาน: ${esc(e.orgType||'-')} · ผู้เข้าร่วม: ${esc(e.attType||'-')}<br>`:''}👥 ผู้เข้าร่วม: ${esc(e.attendees||'-')} คน${customLines(e)}${e.notes?`<br>📝 ${esc(e.notes)}`:''}</p>
  ${e.driveFolder&&me?`<a href="${esc(e.driveFolder)}" target="_blank" rel="noopener"><button>📁 เปิดโฟลเดอร์ใน Drive</button></a> `:''}${e.letterId?`<button onclick="dlFile('${e.id}','letter')">⬇ หนังสือเชิญวิทยากร</button> `:''}${e.rosterId?`<button onclick="dlFile('${e.id}','roster')">⬇ รายชื่อผู้เข้าอบรม</button> `:''}<button onclick="editEv('${e.id}')">✏️ แก้ไขการอบรม</button> ${me?`<button onclick="delEv('${e.id}')">ลบ</button>`:''}`}
 const gasLink=e=>gas.url+'?'+new URLSearchParams({token:gas.token||'',id:e.id,date:e.date||'',endDate:e.endDate||'',speaker:e.speaker||'',topic:e.topic||'',location:e.location||'',attendees:e.attendees||'',faculty:e.faculty||'',trainType:e.trainType||'',courseType:e.courseType||'',notes:e.notes||''}).toString();
@@ -199,24 +196,12 @@ const cfg=()=>{const st=formCfg&&Array.isArray(formCfg.fields)&&formCfg.fields.l
 const FL=()=>cfg().filter(f=>!f.h).map(f=>[f.k,f.l+(f.r?' *':''),f.t,f.o||[],f]);
 const customLines=e=>cfg().filter(f=>!f.b&&e[f.k]).map(f=>`<br>▫️ ${esc(f.l)}: ${esc(e[f.k])}`).join('');
 function vForm(){return `<div class="card"><h3>${draft.id?'แก้ไขการอบรม':'บันทึกหนังสือเชิญวิทยากร'}</h3>
-<label>อัปโหลดหนังสือเชิญ (PDF / PNG / JPG) ให้ AI กรอกข้อมูลและเก็บไว้ในระบบ<input type="file" id="f" accept=".pdf,image/png,image/jpeg" onchange="aiRead(this.files[0])"></label><div id="ai" class="mu"></div>${draft.letterId?'<p class="mu">มีไฟล์หนังสือเชิญแนบแล้ว (อัปโหลดใหม่เพื่อแทนที่)</p>':''}<br>
+<label>แนบหนังสือเชิญวิทยากร (PDF / PNG / JPG)<input type="file" id="f" accept=".pdf,image/png,image/jpeg" onchange="letterFile=this.files[0]||null"></label>${draft.letterId?'<p class="mu">มีไฟล์หนังสือเชิญแนบแล้ว (อัปโหลดใหม่เพื่อแทนที่)</p>':''}<br>
 <div class="grid">${FL().map(([k,l,t,o])=>k==='speaker'?`<div><div style="font-size:13px;color:var(--mu);margin-bottom:3px">${l}</div><div id="spk">${spInputs(draft.speaker)}</div><button type="button" onclick="addSp()" style="margin-top:6px">➕ เพิ่มวิทยากร</button></div>`:t==='select'?`<label>${l}<select id="d_${k}"><option value="">— เลือก —</option>${o.map(v=>`<option ${draft[k]===v?'selected':''}>${v}</option>`).join('')}</select></label>`:t==='textarea'?`<label>${l}<textarea id="d_${k}" rows="2">${esc(draft[k])}</textarea></label>`:`<label>${l}<input type="${t}" id="d_${k}" list="dl_${k}" value="${esc(draft[k])}"></label>`).join('')}</div><br>
 ${['topic','speaker','faculty','location'].map(k=>`<datalist id="dl_${k}">${[...new Set(events.flatMap(e=>k==='speaker'?spl(e[k]):[e[k]]).filter(Boolean))].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join('')}
 <label>หมายเหตุ<textarea id="d_notes" rows="2">${esc(draft.notes)}</textarea></label><br>
 <label>อัปโหลดรายชื่อผู้เข้าร่วม (CSV/PDF/ข้อความ)<input type="file" id="ros" onchange="rosterFile=this.files[0]"></label>${draft.rosterId?'<p class="mu">มีไฟล์รายชื่อแนบแล้ว</p>':''}<br>
 <button class="p" onclick="saveEv()">บันทึก</button> <button onclick="draft={};render()">ล้างฟอร์ม</button></div>`}
-async function toImages(file){if(file.type.startsWith('image/'))return[file];
- pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
- const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,out=[];
- for(let i=1;i<=Math.min(pdf.numPages,3);i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:1.6}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;out.push(await new Promise(r=>c.toBlob(r,'image/jpeg',.85)))}return out}
-async function aiViaApi(file){if(file.size>10*1024*1024)throw new Error('ไฟล์ใหญ่เกิน 10 MB');
- if(!fAuth||!fAuth.currentUser)throw new Error('กรุณาเข้าสู่ระบบก่อนใช้ AI');
- const tok=await fAuth.currentUser.getIdToken();
- const r=await fetch(AI_API,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({mediaType:file.type||'application/pdf',data:await b64(file)})});
- const d=await r.json();if(!d.ok)throw new Error(d.error||'AI ตอบกลับผิดปกติ');return d.data}
-window.aiRead=async file=>{letterFile=file||null;if(!file)return;const s=$('#ai');if(!sample&&!AI_API){s.textContent='AI ไม่พร้อมใช้งาน กรุณากรอกเอง';return}
- try{s.textContent='กำลังอ่านเอกสารด้วย AI…';let r;if(!sample)r=await aiViaApi(file);else{const imgs=await toImages(file);r=await sample.json(`อ่านหนังสือเชิญวิทยากรภาษาไทยในรูปภาพ แล้วตอบเป็น JSON เท่านั้น คีย์: date (วันที่เริ่มอบรม รูปแบบ YYYY-MM-DD ค.ศ. แปลงจาก พ.ศ. โดยลบ 543), endDate (ถ้ามีหลายวัน ไม่เช่นนั้นเว้นว่าง), startTime (เวลาเริ่มอบรม รูปแบบ HH:MM 24 ชั่วโมง ถ้าไม่ระบุเว้นว่าง), endTime (เวลาสิ้นสุด รูปแบบ HH:MM ถ้าไม่ระบุเว้นว่าง), speaker (ชื่อวิทยากรทุกคน คั่นด้วยเครื่องหมายจุลภาค), topic (หัวข้อการอบรมหรือหัวข้อที่วิทยากรบรรยาย), location (สถานที่), attendees (ตัวเลขจำนวนผู้เข้าร่วม ถ้าไม่ระบุให้เว้นว่าง), faculty (คณะ/หน่วยงานที่ขอเชิญหรือจัดกิจกรรม). ห้ามเดาข้อมูลที่ไม่มี`,{images:imgs,cache:false})}
- FL().forEach(([k])=>{if(r[k]!=null){if(k==='speaker')$('#spk').innerHTML=spInputs(Array.isArray(r[k])?r[k].join(','):r[k]);else if($('#d_'+k))$('#d_'+k).value=r[k]}});s.textContent='✅ AI กรอกข้อมูลให้แล้ว กรุณาตรวจทานก่อนบันทึก'}catch(e){s.textContent='อ่านไม่สำเร็จ: '+(e.message||e.code)}};
 let saving=false;
 function busy(t){let o=document.getElementById('busy');if(!t){if(o)o.remove();return}if(!o){o=document.createElement('div');o.id='busy';o.className='mdl';document.body.appendChild(o)}o.innerHTML=`<div class="mb" style="text-align:center"><div class="spin"></div><p style="margin:14px 0 0">${esc(t)}</p></div>`}
 window.saveEv=async()=>{if(saving)return;const o={...draft};FL().forEach(([k])=>o[k]=k==='speaker'?[...document.querySelectorAll('.spk')].map(i=>i.value.trim()).filter(Boolean).join(', '):$('#d_'+k).value.trim());o.notes=$('#d_notes').value;
@@ -299,7 +284,7 @@ function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r
  <select id="fct"><option value="">ทุกประเภทหลักสูตร</option><option>Academic Skills</option><option>Occupation Skills</option></select>
  <select id="ff"><option value="">ทุกคณะ/หน่วยงาน</option>${facs.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
  <select id="ft"><option value="">ทุกหัวข้อ</option>${tops.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
- <select id="fsp"><option value="">ทุกวิทยากร</option>${spks.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
+ <select id="fsp"><option value="">วิทยากรทุกคน</option>${spks.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
  <input id="fs" placeholder="ค้นหาวิทยากร/หัวข้อ" value="${esc(F.s)}">
  <button class="dx" onclick="xl()">⬇ ดาว์โหลด Excel</button><button class="dp" onclick="pdf()">⬇ ดาว์โหลด PDF</button></div></div>
  <div id="rep">${kpis(ev,tot)}
