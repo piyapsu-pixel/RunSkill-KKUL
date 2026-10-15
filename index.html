@@ -66,6 +66,7 @@ body.nosb #side{margin-left:-268px}
 .dx,.dp{border:0;color:#fff;font-weight:600;padding:8px 16px}.dx{background:#16a34a;box-shadow:0 4px 12px rgba(22,163,74,.3)}.dp{background:#dc2626;box-shadow:0 4px 12px rgba(220,38,38,.3)}.dx:hover,.dp:hover{filter:brightness(1.08)}
 .cbx{position:relative}.cba{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--mu);font-size:12px}.cbl{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--card);border:1px solid var(--bd);border-radius:12px;box-shadow:0 10px 30px rgba(20,23,43,.18);max-height:220px;overflow:auto;margin-top:4px}.cbl div{padding:9px 12px;cursor:pointer}.cbl div:hover{background:var(--ac)}
 .spin{width:34px;height:34px;border:4px solid var(--bd);border-top-color:var(--pr);border-radius:50%;margin:0 auto;animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:60;background:#111827;color:#fff;padding:12px 18px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:90vw;font-size:14px}
 </style></head><body>
 <div id="app"><aside id="side">
 <div class="brand"><span class="lgo">✦</span><span>ระบบจัดการตารางวิทยากร<small>RUN SKILL &amp; Ref.Lib. &amp; AI Clinic สำนักหอสมุด มหาวิทยาลัยขอนแก่น</small></span></div>
@@ -84,7 +85,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r13';
+const VER='2026-10-15 r14';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 /* ===== ตั้งค่า AI อ่านหนังสือเชิญ (ขั้นตอนที่ 3) — วาง URL ของ Cloudflare Worker เช่น 'https://runskill-ai.xxxx.workers.dev' ===== */
@@ -221,12 +222,23 @@ function busy(t){let o=document.getElementById('busy');if(!t){if(o)o.remove();re
 window.saveEv=async()=>{if(saving)return;const o={...draft};FL().forEach(([k])=>o[k]=k==='speaker'?[...document.querySelectorAll('.spk')].map(i=>i.value.trim()).filter(Boolean).join(', '):$('#d_'+k).value.trim());o.notes=$('#d_notes').value;
  {const miss=FL().filter(x=>x[4].r&&!o[x[0]]).map(x=>x[1].replace(' *',''));if(miss.length)return setMsg('กรุณากรอก: '+miss.join(', '))}if(!await askC(draft.id?'ยืนยันการบันทึกการแก้ไขกิจกรรม?':'ยืนยันการบันทึกกิจกรรมใหม่?',(o.topic||'')+(o.date?'\n'+fd(o.date):''),'บันทึก',false))return;
  saving=true;busy('กำลังบันทึก… (ถ้าแนบไฟล์ อาจใช้เวลาสักครู่ กรุณาอย่าปิดหรือรีเฟรชหน้า)');
- try{const f=rosterFile||$('#ros').files[0],lf=letterFile;if((f||lf)&&!assets&&!DRIVE_API)return setMsg('ยังไม่ได้ตั้งค่าที่เก็บไฟล์ (Google Drive) — ดูวิธีตั้งค่าที่ DRIVE_API ในโค้ด');
- const folder=(o.date||'')+' '+(o.topic||'');
- if(lf){const r=await upFile(lf,'letter',folder,o.letterId);o.letterId=r.id;o.letterName=lf.name;if(r.folder)o.driveFolder=r.folder}
- if(f){const r=await upFile(f,'roster',folder,o.rosterId);o.rosterId=r.id;o.rosterName=f.name;if(r.folder)o.driveFolder=r.folder}
- if(!db)return setMsg('อัปโหลดไฟล์ขึ้น Google Drive แล้ว แต่ยังไม่ได้เชื่อมต่อฐานข้อมูลสำหรับเก็บกิจกรรม (ขั้นตอนถัดไป)');
- const id=o.id||('e'+Date.now());delete o.id;let slow=false;await Promise.race([db.doc('events/'+id).set(o),new Promise(r=>setTimeout(()=>{slow=true;r()},15000))]);draft={};letterFile=rosterFile=null;tab='cal';setMsg(slow?'⚠️ ส่งข้อมูลไปเซิร์ฟเวอร์ยังไม่เสร็จ (เครือข่ายช้า) กรุณารอสักครู่ และอย่ารีเฟรชหน้า':'บันทึกแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}finally{saving=false;busy(false)}};
+ try{const f=rosterFile||$('#ros').files[0],lf=letterFile,hasF=!!(f||lf);
+ if(hasF&&!assets&&!DRIVE_API)return setMsg('ยังไม่ได้ตั้งค่าที่เก็บไฟล์ (Google Drive) — ดูวิธีตั้งค่าที่ DRIVE_API ในโค้ด');
+ if(!db)return setMsg('ยังไม่ได้เชื่อมต่อฐานข้อมูล');
+ const id=o.id||('e'+Date.now());delete o.id;
+ let slow=false;await Promise.race([db.doc('events/'+id).set(o),new Promise(r=>setTimeout(()=>{slow=true;r()},10000))]);
+ draft={};letterFile=rosterFile=null;tab='cal';
+ if(hasF){setMsg(slow?'⚠️ ส่งข้อมูลไปเซิร์ฟเวอร์ยังไม่เสร็จ (เครือข่ายช้า) กรุณารอสักครู่':'บันทึกกิจกรรมแล้ว — กำลังอัปโหลดไฟล์ไป Google Drive ในพื้นหลัง');bgUpload(id,o,lf,f)}
+ else setMsg(slow?'⚠️ ส่งข้อมูลไปเซิร์ฟเวอร์ยังไม่เสร็จ (เครือข่ายช้า) กรุณารอสักครู่ และอย่ารีเฟรชหน้า':'บันทึกแล้ว')}
+ catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}
+ finally{saving=false;busy(false)}};
+function toast(t,ms){let o=document.getElementById('toast');if(!t){if(o)o.remove();return}if(!o){o=document.createElement('div');o.id='toast';document.body.appendChild(o)}o.textContent=t;clearTimeout(o._t);if(ms)o._t=setTimeout(()=>o.remove(),ms)}
+async function bgUpload(id,o,lf,f){const folder=(o.date||'')+' '+(o.topic||''),u={};
+ toast('⏳ กำลังอัปโหลดไฟล์ไป Google Drive… (กรุณาอย่าปิดหรือรีเฟรชหน้า)');
+ try{if(lf){const r=await upFile(lf,'letter',folder,o.letterId);u.letterId=r.id;u.letterName=lf.name;if(r.folder)u.driveFolder=r.folder}
+  if(f){const r=await upFile(f,'roster',folder,o.rosterId);u.rosterId=r.id;u.rosterName=f.name;if(r.folder)u.driveFolder=r.folder}
+  await db.doc('events/'+id).update(u);toast('✅ อัปโหลดไฟล์ขึ้น Google Drive เรียบร้อยแล้ว',5000)}
+ catch(e){toast('⚠️ บันทึกกิจกรรมแล้ว แต่อัปโหลดไฟล์ไม่สำเร็จ: '+(e.message||e)+' — เปิดแก้ไขกิจกรรมแล้วแนบไฟล์อีกครั้ง',12000)}}
 /* ---------- Dashboard ---------- */
 const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
 function filt(){return events.filter(e=>{const[y,m]=e.date.split('-').map(Number);if(F.p==='all'){}else if(F.p==='range'){if(F.from&&(e.endDate||e.date)<F.from)return false;if(F.to&&e.date>F.to)return false}else if(y!==+F.y)return false;
