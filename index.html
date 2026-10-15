@@ -84,7 +84,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r16';
+const VER='2026-10-15 r17';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec',DRIVE_TOKEN='KKUL1188945';
@@ -176,13 +176,18 @@ async function drivePost(o){const r=await fetch(DRIVE_API,{method:'POST',body:JS
 async function upFile(file,kind,folder,oldId){if(!DRIVE_API)return{id:(await assets.upload(file)).id};
  const d=await drivePost({action:'upload',folder,kind,fileName:file.name,mime:file.type||'application/octet-stream',data:await b64(file),replaceId:String(oldId||'').startsWith('drive:')?oldId.slice(6):''});
  if(!d.ok)throw new Error(d.error||'อัปโหลดไม่สำเร็จ');return{id:'drive:'+d.fileId,folder:d.folderUrl}}
+const DC=new Map();
+function getDrive(bid){let c=DC.get(bid);if(c)return c;c={done:false};
+ c.p=drivePost({action:'download',id:bid.slice(6)}).then(d=>{if(!d.ok)throw new Error(d.error||'ไม่พบไฟล์');const bin=atob(d.data),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);c.done=true;return{blob:new Blob([u],{type:d.mime}),name:d.name}}).catch(x=>{DC.delete(bid);throw x});DC.set(bid,c);return c}
+function prefetchPop(){if(!popup||!DRIVE_API)return;popup.forEach(id=>{const e=events.find(x=>x.id===id);if(!e)return;['letterId','rosterId'].forEach(k=>{if(String(e[k]||'').startsWith('drive:'))getDrive(e[k]).p.catch(()=>{})})})}
 window.dlFile=async(id,w)=>{const e=events.find(x=>x.id===id),bid=e&&e[w+'Id'];if(!bid)return;
- if(String(bid).startsWith('drive:')){try{setMsg('กำลังดาวน์โหลดจาก Google Drive…');const d=await drivePost({action:'download',id:bid.slice(6)});if(!d.ok)throw new Error(d.error||'ไม่พบไฟล์');const bin=atob(d.data),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);await dl.save({filename:e[w+'Name']||d.name,data:new Blob([u],{type:d.mime})});setMsg('ดาวน์โหลดแล้ว')}catch(x){setMsg('ดาวน์โหลดไม่สำเร็จ: '+(x.message||x))}return}
+ if(String(bid).startsWith('drive:')){const c=getDrive(bid);if(!c.done)toast('⏳ กำลังเตรียมไฟล์จาก Google Drive…');
+  try{const r=await c.p;await dl.save({filename:e[w+'Name']||r.name,data:r.blob});toast('✅ ดาวน์โหลดแล้ว',2500)}catch(x){toast('⚠️ ดาวน์โหลดไม่สำเร็จ: '+(x.message||x),6000)}return}
 let name=e[w+'Name']||(w==='letter'?'หนังสือเชิญวิทยากร':'รายชื่อผู้เข้าอบรม');
  try{const r=await fetch('/_blob/'+bid);if(!r.ok)throw 0;const b=await r.blob();if(!/\.\w{2,5}$/.test(name))name+=({'application/pdf':'.pdf','image/png':'.png','image/jpeg':'.jpg','text/csv':'.csv','text/plain':'.txt'}[b.type]||'');await dl.save({filename:name,data:b})}catch(x){window.open('/_blob/'+bid,'_blank')}};
-window.openEv=ids=>{popup=ids;render()};
+window.openEv=ids=>{popup=ids;render();prefetchPop()};
 window.closePop=()=>{popup=null;render()};
-window.openDay=k=>{selDay=k;const ids=calEv().filter(e=>e.date<=k&&(e.endDate||e.date)>=k).map(e=>e.id);popup=ids.length?ids:null;render()};
+window.openDay=k=>{selDay=k;const ids=calEv().filter(e=>e.date<=k&&(e.endDate||e.date)>=k).map(e=>e.id);popup=ids.length?ids:null;render();prefetchPop()};
 function popHtml(){if(!popup)return'';const evs=popup.map(id=>events.find(e=>e.id===id)).filter(Boolean);if(!evs.length){popup=null;return''}
  return `<div class="mdl" onclick="if(event.target===this)closePop()"><div class="mb pop"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;margin-bottom:8px"><h3 style="margin:0">${evs.length>1?'กิจกรรมวันที่ '+fd(evs[0].date)+' ('+evs.length+' รายการ)':'รายละเอียดการอบรม'}</h3><button onclick="closePop()" aria-label="ปิด">✕</button></div>${evs.map(detail).join('<hr>')}</div></div>`}
 window.calGo=()=>{cur=new Date(+$('#cy').value,+$('#cm').value,1);render()};
