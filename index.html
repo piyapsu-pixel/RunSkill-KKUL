@@ -65,6 +65,7 @@ body.nosb #side{margin-left:-268px}
 .lg1 div{display:flex;gap:6px;align-items:center;font-size:12px;margin:3px 0;text-align:left}.lg1 span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lg1 u{width:11px;height:11px;border-radius:3px;flex:none}
 .dx,.dp{border:0;color:#fff;font-weight:600;padding:8px 16px}.dx{background:#16a34a;box-shadow:0 4px 12px rgba(22,163,74,.3)}.dp{background:#dc2626;box-shadow:0 4px 12px rgba(220,38,38,.3)}.dx:hover,.dp:hover{filter:brightness(1.08)}
 .cbx{position:relative}.cba{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--mu);font-size:12px}.cbl{position:absolute;left:0;right:0;top:100%;z-index:20;background:var(--card);border:1px solid var(--bd);border-radius:12px;box-shadow:0 10px 30px rgba(20,23,43,.18);max-height:220px;overflow:auto;margin-top:4px}.cbl div{padding:9px 12px;cursor:pointer}.cbl div:hover{background:var(--ac)}
+.spin{width:34px;height:34px;border:4px solid var(--bd);border-top-color:var(--pr);border-radius:50%;margin:0 auto;animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 </style></head><body>
 <div id="app"><aside id="side">
 <div class="brand"><span class="lgo">✦</span><span>ระบบจัดการตารางวิทยากร<small>RUN SKILL &amp; Ref.Lib. &amp; AI Clinic สำนักหอสมุด มหาวิทยาลัยขอนแก่น</small></span></div>
@@ -83,7 +84,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r12';
+const VER='2026-10-15 r13';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 /* ===== ตั้งค่า AI อ่านหนังสือเชิญ (ขั้นตอนที่ 3) — วาง URL ของ Cloudflare Worker เช่น 'https://runskill-ai.xxxx.workers.dev' ===== */
@@ -101,7 +102,7 @@ function setMsg(t){msg=t;render()}
 async function init(){
  $('#ver').textContent='เวอร์ชัน '+VER+(FB?' · Firebase':'');
  if(FB_CFG&&typeof firebase==='undefined'){for(const f of ['app','auth','firestore'])await new Promise(r=>{const x=document.createElement('script');x.src='https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-'+f+'-compat.js';x.onload=x.onerror=r;document.head.appendChild(x)});FB=typeof firebase!=='undefined'}
- if(FB){try{firebase.initializeApp(FB_CFG);FS=firebase.firestore();fAuth=firebase.auth();db=FS;await fAuth.setPersistence(firebase.auth.Auth.Persistence.NONE);fAuth.onAuthStateChanged(faUser)}catch(e){msg='เชื่อมต่อ Firebase ไม่ได้: '+(e.message||e)}}
+ if(FB){try{firebase.initializeApp(FB_CFG);FS=firebase.firestore();FS.settings({experimentalAutoDetectLongPolling:true,merge:true});fAuth=firebase.auth();db=FS;await fAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION);fAuth.onAuthStateChanged(faUser)}catch(e){msg='เชื่อมต่อ Firebase ไม่ได้: '+(e.message||e)}}
  else{try{db=await claude.use('db');assets=await claude.use('assets');sample=await claude.use('sample');dl=await claude.use('downloads')}catch(e){}}
  if(!dl)dl={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();a.remove()}};
  if(db){try{db.collection('events').onSnapshot(s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{msg='อ่านข้อมูลกิจกรรมไม่ได้: '+(e.message||e.code);render()});
@@ -117,7 +118,7 @@ async function faUser(u){if(!u)return;
  try{const s=await FS.doc('users/'+u.uid).get();let p;
   if(!s.exists){if(u.email===BOOT_EMAIL){p={firstName:'Piyaphat',lastName:'Suwankasem',email:BOOT_EMAIL,username:'piyapsu',role:'admin'};await FS.doc('users/'+u.uid).set(p);await FS.doc('usernames/piyapsu').set({email:BOOT_EMAIL,uid:u.uid})}
    else{await fAuth.signOut();return setMsg('บัญชีนี้ยังไม่ได้รับสิทธิ์ในระบบ')}}else p=s.data();
-  me={...p,id:u.uid,uid:u.uid};tab='form';msg='';
+  me={...p,id:u.uid,uid:u.uid};if(tab==='login')tab='form';msg='';
   if(faUnsub)faUnsub();faUnsub=FS.collection('users').onSnapshot(q=>{const l=q.docs.map(d=>({id:d.id,...d.data()}));admins=l.filter(x=>x.role==='admin');speakers=l.filter(x=>x.role==='speaker');render()},()=>{});
   render()}catch(e){try{await fAuth.signOut()}catch(x){}setMsg('เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code))}}
 async function faSaveUser(role,pre){const g=i=>$('#'+pre+i).value.trim(),a={firstName:g(1),lastName:g(2),email:g(3),username:g(4).toLowerCase(),role},old=$('#'+pre+'4').dataset.old;
@@ -215,14 +216,17 @@ async function aiViaApi(file){if(file.size>10*1024*1024)throw new Error('ไฟ�
 window.aiRead=async file=>{letterFile=file||null;if(!file)return;const s=$('#ai');if(!sample&&!AI_API){s.textContent='AI ไม่พร้อมใช้งาน กรุณากรอกเอง';return}
  try{s.textContent='กำลังอ่านเอกสารด้วย AI…';let r;if(!sample)r=await aiViaApi(file);else{const imgs=await toImages(file);r=await sample.json(`อ่านหนังสือเชิญวิทยากรภาษาไทยในรูปภาพ แล้วตอบเป็น JSON เท่านั้น คีย์: date (วันที่เริ่มอบรม รูปแบบ YYYY-MM-DD ค.ศ. แปลงจาก พ.ศ. โดยลบ 543), endDate (ถ้ามีหลายวัน ไม่เช่นนั้นเว้นว่าง), startTime (เวลาเริ่มอบรม รูปแบบ HH:MM 24 ชั่วโมง ถ้าไม่ระบุเว้นว่าง), endTime (เวลาสิ้นสุด รูปแบบ HH:MM ถ้าไม่ระบุเว้นว่าง), speaker (ชื่อวิทยากรทุกคน คั่นด้วยเครื่องหมายจุลภาค), topic (หัวข้อการอบรมหรือหัวข้อที่วิทยากรบรรยาย), location (สถานที่), attendees (ตัวเลขจำนวนผู้เข้าร่วม ถ้าไม่ระบุให้เว้นว่าง), faculty (คณะ/หน่วยงานที่ขอเชิญหรือจัดกิจกรรม). ห้ามเดาข้อมูลที่ไม่มี`,{images:imgs,cache:false})}
  FL().forEach(([k])=>{if(r[k]!=null){if(k==='speaker')$('#spk').innerHTML=spInputs(Array.isArray(r[k])?r[k].join(','):r[k]);else if($('#d_'+k))$('#d_'+k).value=r[k]}});s.textContent='✅ AI กรอกข้อมูลให้แล้ว กรุณาตรวจทานก่อนบันทึก'}catch(e){s.textContent='อ่านไม่สำเร็จ: '+(e.message||e.code)}};
-window.saveEv=async()=>{const o={...draft};FL().forEach(([k])=>o[k]=k==='speaker'?[...document.querySelectorAll('.spk')].map(i=>i.value.trim()).filter(Boolean).join(', '):$('#d_'+k).value.trim());o.notes=$('#d_notes').value;
+let saving=false;
+function busy(t){let o=document.getElementById('busy');if(!t){if(o)o.remove();return}if(!o){o=document.createElement('div');o.id='busy';o.className='mdl';document.body.appendChild(o)}o.innerHTML=`<div class="mb" style="text-align:center"><div class="spin"></div><p style="margin:14px 0 0">${esc(t)}</p></div>`}
+window.saveEv=async()=>{if(saving)return;const o={...draft};FL().forEach(([k])=>o[k]=k==='speaker'?[...document.querySelectorAll('.spk')].map(i=>i.value.trim()).filter(Boolean).join(', '):$('#d_'+k).value.trim());o.notes=$('#d_notes').value;
  {const miss=FL().filter(x=>x[4].r&&!o[x[0]]).map(x=>x[1].replace(' *',''));if(miss.length)return setMsg('กรุณากรอก: '+miss.join(', '))}if(!await askC(draft.id?'ยืนยันการบันทึกการแก้ไขกิจกรรม?':'ยืนยันการบันทึกกิจกรรมใหม่?',(o.topic||'')+(o.date?'\n'+fd(o.date):''),'บันทึก',false))return;
+ saving=true;busy('กำลังบันทึก… (ถ้าแนบไฟล์ อาจใช้เวลาสักครู่ กรุณาอย่าปิดหรือรีเฟรชหน้า)');
  try{const f=rosterFile||$('#ros').files[0],lf=letterFile;if((f||lf)&&!assets&&!DRIVE_API)return setMsg('ยังไม่ได้ตั้งค่าที่เก็บไฟล์ (Google Drive) — ดูวิธีตั้งค่าที่ DRIVE_API ในโค้ด');
  const folder=(o.date||'')+' '+(o.topic||'');
  if(lf){const r=await upFile(lf,'letter',folder,o.letterId);o.letterId=r.id;o.letterName=lf.name;if(r.folder)o.driveFolder=r.folder}
  if(f){const r=await upFile(f,'roster',folder,o.rosterId);o.rosterId=r.id;o.rosterName=f.name;if(r.folder)o.driveFolder=r.folder}
  if(!db)return setMsg('อัปโหลดไฟล์ขึ้น Google Drive แล้ว แต่ยังไม่ได้เชื่อมต่อฐานข้อมูลสำหรับเก็บกิจกรรม (ขั้นตอนถัดไป)');
- const id=o.id||('e'+Date.now());delete o.id;await db.doc('events/'+id).set(o);draft={};letterFile=rosterFile=null;tab='cal';setMsg('บันทึกแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}};
+ const id=o.id||('e'+Date.now());delete o.id;let slow=false;await Promise.race([db.doc('events/'+id).set(o),new Promise(r=>setTimeout(()=>{slow=true;r()},15000))]);draft={};letterFile=rosterFile=null;tab='cal';setMsg(slow?'⚠️ ส่งข้อมูลไปเซิร์ฟเวอร์ยังไม่เสร็จ (เครือข่ายช้า) กรุณารอสักครู่ และอย่ารีเฟรชหน้า':'บันทึกแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code)+' (ตรวจสิทธิ์เขียนข้อมูลของบัญชี)')}finally{saving=false;busy(false)}};
 /* ---------- Dashboard ---------- */
 const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
 function filt(){return events.filter(e=>{const[y,m]=e.date.split('-').map(Number);if(F.p==='all'){}else if(F.p==='range'){if(F.from&&(e.endDate||e.date)<F.from)return false;if(F.to&&e.date>F.to)return false}else if(y!==+F.y)return false;
