@@ -75,30 +75,64 @@ body.nosb #side{margin-left:-268px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
+/* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
+const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
+const FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec',DRIVE_TOKEN='KKUL1188945';
 const TM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],TD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const DEF_ADMIN={id:'piyapsu',firstName:'Piyaphat',lastName:'Suwankasem',email:'piyapsu@kku.ac.th',username:'piyapsu',pw:'2bdf436177bd99a9b510050176583a132cbfb04b730573d68c5c12f74fc57092',builtin:true};
 const withDef=l=>l.some(x=>x.username==='piyapsu')?l:[DEF_ADMIN,...l];
-let formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[DEF_ADMIN],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',from:'',to:''};
+let FS=null,fAuth=null,faUnsub=null,formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[DEF_ADMIN],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',from:'',to:''};
 const MF=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const TODAY=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const fd=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+dd} ${TM[m-1]} ${+y+543}`};
 const sha=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function setMsg(t){msg=t;render()}
 async function init(){
- try{db=await claude.use('db');assets=await claude.use('assets');sample=await claude.use('sample');dl=await claude.use('downloads')}catch(e){}
+ if(FB){try{firebase.initializeApp(FB_CFG);FS=firebase.firestore();fAuth=firebase.auth();db=FS;await fAuth.setPersistence(firebase.auth.Auth.Persistence.NONE);fAuth.onAuthStateChanged(faUser)}catch(e){msg='เชื่อมต่อ Firebase ไม่ได้: '+(e.message||e)}}
+ else{try{db=await claude.use('db');assets=await claude.use('assets');sample=await claude.use('sample');dl=await claude.use('downloads')}catch(e){}}
  if(!dl)dl={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();a.remove()}};
- if(db){try{db.collection('events').onSnapshot(s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));render()});
-  db.collection('admins').onSnapshot(s=>{admins=withDef(s.docs.map(d=>({id:d.id,...d.data()})));render()});
-  db.collection('speakers').onSnapshot(s=>{speakers=s.docs.map(d=>({id:d.id,...d.data()}));render()});
-  db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;render()})}catch(e){}}
+ if(db){try{db.collection('events').onSnapshot(s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{msg='อ่านข้อมูลกิจกรรมไม่ได้: '+(e.message||e.code);render()});
+  if(!FB){db.collection('admins').onSnapshot(s=>{admins=withDef(s.docs.map(d=>({id:d.id,...d.data()})));render()});
+  db.collection('speakers').onSnapshot(s=>{speakers=s.docs.map(d=>({id:d.id,...d.data()}));render()})}
+  db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;render()},()=>{})}catch(e){}}
  render()}
+/* ---------- Firebase auth ---------- */
+async function faLogin(){const u=$('#lu').value.trim().toLowerCase(),pw=$('#lp').value;
+ try{const d=await FS.doc('usernames/'+u).get();const email=d.exists?d.data().email:(u==='piyapsu'?BOOT_EMAIL:null);if(!email)throw 0;await fAuth.signInWithEmailAndPassword(email,pw)}catch(e){setMsg('Username หรือ Password ไม่ถูกต้อง')}}
+async function faUser(u){if(!u)return;
+ try{const s=await FS.doc('users/'+u.uid).get();let p;
+  if(!s.exists){if(u.email===BOOT_EMAIL){p={firstName:'Piyaphat',lastName:'Suwankasem',email:BOOT_EMAIL,username:'piyapsu',role:'admin'};await FS.doc('users/'+u.uid).set(p);await FS.doc('usernames/piyapsu').set({email:BOOT_EMAIL,uid:u.uid})}
+   else{await fAuth.signOut();return setMsg('บัญชีนี้ยังไม่ได้รับสิทธิ์ในระบบ')}}else p=s.data();
+  me={...p,id:u.uid,uid:u.uid};tab='form';msg='';
+  if(faUnsub)faUnsub();faUnsub=FS.collection('users').onSnapshot(q=>{const l=q.docs.map(d=>({id:d.id,...d.data()}));admins=l.filter(x=>x.role==='admin');speakers=l.filter(x=>x.role==='speaker');render()},()=>{});
+  render()}catch(e){try{await fAuth.signOut()}catch(x){}setMsg('เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code))}}
+async function faSaveUser(role,pre){const g=i=>$('#'+pre+i).value.trim(),a={firstName:g(1),lastName:g(2),email:g(3),username:g(4).toLowerCase(),role},old=$('#'+pre+'4').dataset.old;
+ if(!a.firstName||!a.email||!a.username)return setMsg('กรุณากรอกข้อมูลให้ครบ');
+ const lst=[...admins,...speakers];if(lst.some(x=>x.username===a.username&&x.id!==old))return setMsg('Username นี้ถูกใช้แล้ว');
+ if(!await askC(old?'ยืนยันการบันทึกการแก้ไข?':'ยืนยันการเพิ่ม'+(role==='admin'?'แอดมิน':'วิทยากร')+'?',a.firstName+' '+a.lastName+' ('+a.username+')','บันทึก',false))return;
+ try{if(old){const prev=lst.find(x=>x.id===old);await FS.doc('users/'+old).update({firstName:a.firstName,lastName:a.lastName,username:a.username});
+   if(prev.username!==a.username){await FS.doc('usernames/'+a.username).set({email:prev.email,uid:old});await FS.doc('usernames/'+prev.username).delete()}
+   if(g(5))return setMsg('บันทึกแล้ว (รหัสผ่านไม่ถูกเปลี่ยน — ใช้ปุ่ม "✉ รีเซ็ตรหัส" เพื่อส่งลิงก์เปลี่ยนรหัสผ่านทางอีเมล)');setMsg('บันทึกแล้ว')}
+  else{const pw=g(5)||a.username+'1234';if(pw.length<6)return setMsg('Password ต้องยาวอย่างน้อย 6 ตัวอักษร');
+   const sec=firebase.apps.find(x=>x.name==='sec')||firebase.initializeApp(FB_CFG,'sec');await sec.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+   const c=await sec.auth().createUserWithEmailAndPassword(a.email,pw),uid=c.user.uid;await sec.auth().signOut();
+   await FS.doc('users/'+uid).set(a);await FS.doc('usernames/'+a.username).set({email:a.email,uid});setMsg('เพิ่ม'+(role==='admin'?'แอดมิน':'วิทยากร')+'แล้ว')}}
+ catch(e){setMsg('ไม่สำเร็จ: '+(e.code==='auth/email-already-in-use'?'อีเมลนี้มีบัญชีอยู่แล้ว':(e.message||e.code)))}}
+async function faDel(id){const u=[...admins,...speakers].find(x=>x.id===id);if(!u)return;if(me&&id===me.uid)return setMsg('ไม่สามารถลบบัญชีของตัวเองได้');
+ if(u.role==='admin'&&admins.length<2)return setMsg('ต้องเหลือแอดมินอย่างน้อย 1 คน');
+ if(!await askC('ยืนยันการลบ'+(u.role==='admin'?'แอดมิน':'วิทยากร')+'?','บัญชีนี้จะเข้าสู่ระบบไม่ได้อีก'))return;
+ try{await FS.doc('users/'+id).delete();await FS.doc('usernames/'+u.username).delete();setMsg('ลบแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}}
+window.resetPw=async email=>{if(!await askC('ส่งอีเมลรีเซ็ตรหัสผ่าน?','ส่งลิงก์ไปที่ '+email,'ส่งอีเมล',false))return;try{await fAuth.sendPasswordResetEmail(email);setMsg('ส่งลิงก์รีเซ็ตรหัสผ่านไปที่ '+email+' แล้ว')}catch(e){setMsg('ส่งไม่สำเร็จ: '+(e.message||e.code))}};
 function render(){
  $('#nav').innerHTML=`<div class="grp">ภาพรวม<small>ปฏิทินและสรุปข้อมูล</small></div>${nb('cal','📅','ปฏิทิน')}${nb('dash','📊','Dashboard')}<div class="grp">จัดการ<small>แอดมินและวิทยากร</small></div>${nb('form','📝','จัดการอบรม',1)}${me&&me.role!=='admin'?'':`<div class="grp">ผู้ดูแลระบบ<small>เฉพาะแอดมิน</small></div>${nb('spk','🎤','จัดการวิทยากร',1)}${nb('adm','👥','จัดการแอดมิน',1)}${nb('fb','🛠','แก้ไขแบบฟอร์ม',1)}`}`;
- $('#who').innerHTML=me?`<div class="av">${esc((me.firstName||'?')[0])}${esc((me.lastName||'')[0]||'')}</div><b>${esc(me.firstName)} ${esc(me.lastName)}</b><small>${me.role==='admin'?'แอดมิน':'วิทยากร'} · ${esc(me.email)}</small>`:`<div class="av">👤</div><b>ผู้เยี่ยมชม</b><small>ดูปฏิทินและสรุปข้อมูล</small>`;$('#dt').textContent=fd(TODAY());$('#lg').textContent=me?'ออกจากระบบ':'เข้าสู่ระบบ';$('#lg').onclick=me?()=>{me=null;tab='cal';render()}:()=>{tab='login';render()};
+ $('#who').innerHTML=me?`<div class="av">${esc((me.firstName||'?')[0])}${esc((me.lastName||'')[0]||'')}</div><b>${esc(me.firstName)} ${esc(me.lastName)}</b><small>${me.role==='admin'?'แอดมิน':'วิทยากร'} · ${esc(me.email)}</small>${FB?`<button onclick="resetPw('${esc(me.email)}')" style="margin-top:8px;font-size:12px;padding:5px 10px">🔑 ส่งอีเมลเปลี่ยนรหัสผ่าน</button>`:''}`:`<div class="av">👤</div><b>ผู้เยี่ยมชม</b><small>ดูปฏิทินและสรุปข้อมูล</small>`;$('#dt').textContent=fd(TODAY());$('#lg').textContent=me?'ออกจากระบบ':'เข้าสู่ระบบ';$('#lg').onclick=me?()=>{if(fAuth){fAuth.signOut();if(faUnsub)faUnsub();admins=[];speakers=[]}me=null;tab='cal';render()}:()=>{tab='login';render()};
  const adT=tab==='adm'||tab==='spk'||tab==='fb';if(me&&me.role!=='admin'&&adT){tab='cal';msg='เมนูนี้สำหรับแอดมินเท่านั้น'}const need=(tab==='form'||adT)&&!me;if(need)tab='login';$('#pt').textContent={cal:'ปฏิทินกิจกรรม',dash:'Dashboard',form:'จัดการอบรม',adm:'จัดการแอดมิน',spk:'จัดการวิทยากร',fb:'แก้ไขแบบฟอร์ม',login:'เข้าสู่ระบบ'}[tab];
  $('#m').innerHTML=(tab==='cal'||tab==='dash'?hero():'')+(msg?`<div class="msg">${esc(msg)}</div>`:'')+({cal:vCal,dash:vDash,form:vForm,adm:vAdm,spk:vSpk,fb:vFb,login:vLogin}[tab])();
  if(tab==='dash')bindDash()}
@@ -106,7 +140,7 @@ window.go=k=>{tab=k;msg='';popup=null;if(k==='fb')fbDraft=JSON.parse(JSON.string
 /* ---------- Login ---------- */
 function vLogin(){return `<div class="card" style="max-width:380px;margin:auto"><h3>เข้าสู่ระบบ</h3><p class="mu">สำหรับแอดมินและวิทยากร — ใช้จัดการอบรม (เฉพาะแอดมินจัดการวิทยากรและแอดมินได้)</p>
 <label>Username<input id="lu" autocomplete="username"></label><br><label>Password<input id="lp" type="password" autocomplete="current-password"></label><br><button class="p" onclick="doLogin()">เข้าสู่ระบบ</button></div>`}
-window.doLogin=async()=>{const u=$('#lu').value.trim().toLowerCase(),h=await sha($('#lp').value);let a=admins.find(x=>x.username===u&&x.pw===h),r='admin';
+window.doLogin=async()=>{if(FB)return faLogin();const u=$('#lu').value.trim().toLowerCase(),h=await sha($('#lp').value);let a=admins.find(x=>x.username===u&&x.pw===h),r='admin';
  if(!a){a=speakers.find(x=>x.username===u&&x.pw===h);r='speaker'}
  if(!a&&!admins.length&&u==='piyapsu'&&h===await sha('piyapsu1234')){a={id:'piyapsu',firstName:'Piyaphat',lastName:'Suwankasem',email:'piyapsu@kku.ac.th',username:'piyapsu',pw:h};r='admin';try{await db.doc('admins/piyapsu').set(a)}catch(e){}}
  if(!a)return setMsg('Username หรือ Password ไม่ถูกต้อง');
@@ -291,24 +325,24 @@ window.fbAdd=()=>{fbDraft.push({k:'x'+Date.now().toString(36),l:'ช่องข
 window.fbReset=async()=>{if(await askC('คืนค่าเริ่มต้น?','ช่องที่เพิ่มเองจะหายจากฟอร์ม (ยังไม่บันทึกจนกว่าจะกดบันทึกแบบฟอร์ม)','คืนค่า')){fbDraft=DEF.map(x=>({...x,o:x.o?[...x.o]:undefined}));render()}};
 window.fbSave=async()=>{if(!await askC('ยืนยันการบันทึกแบบฟอร์ม?','การเปลี่ยนแปลงจะมีผลกับทุกคนที่ใช้ฟอร์มจัดการอบรม','บันทึก',false))return;try{fbDraft.forEach(f=>{if(f.o)f.o=f.o.map(x=>String(x).trim()).filter(Boolean)});await db.doc('settings/form').set({fields:JSON.parse(JSON.stringify(fbDraft))});setMsg('บันทึกแบบฟอร์มแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
 /* ---------- Speakers ---------- */
-function vSpk(){return `<div class="card"><h3>วิทยากร</h3><div class="tw"><table><tr><th>ชื่อ</th><th>E-mail</th><th>Username</th><th>สิทธิ์</th></tr>${admins.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><b>แอดมิน + วิทยากร</b><br><span class="mu">แก้ไขที่หน้าจัดการแอดมิน</span></td></tr>`).join('')}${speakers.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><button onclick="eS('${a.id}')">แก้ไข</button> <button onclick="dS('${a.id}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4" class="mu">ยังไม่มีวิทยากรที่เป็นวิทยากรอย่างเดียว</td></tr>'}</table></div></div>
+function vSpk(){return `<div class="card"><h3>วิทยากร</h3><div class="tw"><table><tr><th>ชื่อ</th><th>E-mail</th><th>Username</th><th>สิทธิ์</th></tr>${admins.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><b>แอดมิน + วิทยากร</b><br><span class="mu">แก้ไขที่หน้าจัดการแอดมิน</span></td></tr>`).join('')}${speakers.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td>${FB?`<button onclick="resetPw('${esc(a.email)}')">✉ รีเซ็ตรหัส</button> `:''}<button onclick="eS('${a.id}')">แก้ไข</button> <button onclick="dS('${a.id}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4" class="mu">ยังไม่มีวิทยากรที่เป็นวิทยากรอย่างเดียว</td></tr>'}</table></div></div>
  <div class="card"><h3 id="sh">เพิ่ม/แก้ไขวิทยากร</h3><p class="mu">แอดมินทุกคนนับเป็นวิทยากรด้วยอัตโนมัติ ส่วนวิทยากรที่เพิ่มที่นี่จะเป็นวิทยากรเท่านั้น การล็อกอินได้ดูปฏิทิน Dashboard และจัดการอบรมได้ แต่จัดการวิทยากรและแอดมินไม่ได้</p><div class="grid"><label>ชื่อจริง<input id="s1"></label><label>นามสกุล<input id="s2"></label><label>E-mail<input id="s3" oninput="autoS()"></label><label>Username<input id="s4"></label><label>Password (เว้นว่าง = Username+1234 / ตอนแก้ไขเว้นว่าง = ไม่เปลี่ยน)<input id="s5" type="text"></label></div><br><button class="p" onclick="sS()">บันทึก</button> <button onclick="render()">ล้างฟอร์ม</button></div>`}
 window.autoS=()=>{$('#s4').value=$('#s3').value.split('@')[0].toLowerCase()};
-window.eS=id=>{const a=speakers.find(x=>x.id===id);$('#s1').value=a.firstName;$('#s2').value=a.lastName;$('#s3').value=a.email;$('#s4').value=a.username;$('#s5').value='';$('#s4').dataset.old=id;$('#sh').scrollIntoView()};
-window.dS=async id=>{if(await askC('ยืนยันการลบวิทยากร?','วิทยากรคนนี้จะเข้าสู่ระบบไม่ได้อีก (ข้อมูลกิจกรรมเดิมไม่ถูกลบ)'))try{await db.doc('speakers/'+id).delete();setMsg('ลบวิทยากรแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ')}};
-window.sS=async()=>{const a={firstName:$('#s1').value.trim(),lastName:$('#s2').value.trim(),email:$('#s3').value.trim(),username:$('#s4').value.trim().toLowerCase()},old=$('#s4').dataset.old;
+window.eS=id=>{const a=speakers.find(x=>x.id===id);$('#s1').value=a.firstName;$('#s2').value=a.lastName;$('#s3').value=a.email;$('#s3').readOnly=!!FB;$('#s4').value=a.username;$('#s5').value='';$('#s4').dataset.old=id;$('#sh').scrollIntoView()};
+window.dS=async id=>{if(FB)return faDel(id);if(await askC('ยืนยันการลบวิทยากร?','วิทยากรคนนี้จะเข้าสู่ระบบไม่ได้อีก (ข้อมูลกิจกรรมเดิมไม่ถูกลบ)'))try{await db.doc('speakers/'+id).delete();setMsg('ลบวิทยากรแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ')}};
+window.sS=async()=>{if(FB)return faSaveUser('speaker','s');const a={firstName:$('#s1').value.trim(),lastName:$('#s2').value.trim(),email:$('#s3').value.trim(),username:$('#s4').value.trim().toLowerCase()},old=$('#s4').dataset.old;
  if(!a.firstName||!a.email||!a.username)return setMsg('กรุณากรอกข้อมูลให้ครบ');
  if(admins.some(x=>x.username===a.username)||speakers.some(x=>x.username===a.username&&x.id!==old))return setMsg('Username นี้ถูกใช้แล้ว');
  if(!await askC(old?'ยืนยันการบันทึกการแก้ไขวิทยากร?':'ยืนยันการเพิ่มวิทยากร?',a.firstName+' '+a.lastName+' ('+a.username+')','บันทึก',false))return;const pw=$('#s5').value||(old?null:a.username+'1234');if(pw)a.pw=await sha(pw);else a.pw=speakers.find(x=>x.id===old).pw;
  try{await db.doc('speakers/'+a.username).set(a);if(old&&old!==a.username)await db.doc('speakers/'+old).delete();setMsg('บันทึกวิทยากรแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
 /* ---------- Admin ---------- */
-function vAdm(){return `<div class="card"><h3>แอดมิน</h3><div class="tw"><table><tr><th>ชื่อ</th><th>E-mail</th><th>Username</th><th></th></tr>${admins.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td><button onclick="eA('${a.id}')">แก้ไข</button> <button onclick="dA('${a.id}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4" class="mu">ยังไม่มีข้อมูลในฐานข้อมูล (ล็อกอินด้วยบัญชีเริ่มต้นจะถูกบันทึกให้)</td></tr>'}</table></div></div>
+function vAdm(){return `<div class="card"><h3>แอดมิน</h3><div class="tw"><table><tr><th>ชื่อ</th><th>E-mail</th><th>Username</th><th></th></tr>${admins.map(a=>`<tr><td>${esc(a.firstName)} ${esc(a.lastName)}</td><td>${esc(a.email)}</td><td>${esc(a.username)}</td><td>${FB?`<button onclick="resetPw('${esc(a.email)}')">✉ รีเซ็ตรหัส</button> `:''}<button onclick="eA('${a.id}')">แก้ไข</button> <button onclick="dA('${a.id}')">ลบ</button></td></tr>`).join('')||'<tr><td colspan="4" class="mu">ยังไม่มีข้อมูลในฐานข้อมูล (ล็อกอินด้วยบัญชีเริ่มต้นจะถูกบันทึกให้)</td></tr>'}</table></div></div>
  <div class="card"><h3 id="at">เพิ่ม/แก้ไขแอดมิน</h3><div class="grid"><label>ชื่อจริง<input id="a1"></label><label>นามสกุล<input id="a2"></label><label>E-mail<input id="a3" oninput="auto()"></label><label>Username<input id="a4"></label><label>Password (เว้นว่าง = Username+1234 / ตอนแก้ไขเว้นว่าง = ไม่เปลี่ยน)<input id="a5" type="text"></label></div><br><button class="p" onclick="sA()">บันทึก</button></div>`}
 window.sG=async()=>{try{await db.doc('settings/gas').set({url:$('#g1').value.trim(),token:$('#g2').value.trim()});setMsg('บันทึกการเชื่อมต่อแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
 window.auto=()=>{$('#a4').value=$('#a3').value.split('@')[0].toLowerCase()};
-window.eA=id=>{const a=admins.find(x=>x.id===id);$('#a1').value=a.firstName;$('#a2').value=a.lastName;$('#a3').value=a.email;$('#a4').value=a.username;$('#a5').value='';$('#a4').dataset.old=id;scrollTo(0,document.body.scrollHeight)};
-window.dA=async id=>{if(id==='piyapsu')return setMsg('ไม่สามารถลบแอดมินหลัก (piyapsu) ได้');if(admins.length<2)return setMsg('ต้องเหลือแอดมินอย่างน้อย 1 คน');if(await askC('ยืนยันการลบแอดมิน?','ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้อีก'))try{await db.doc('admins/'+id).delete()}catch(e){setMsg('ลบไม่สำเร็จ')}};
-window.sA=async()=>{const a={firstName:$('#a1').value.trim(),lastName:$('#a2').value.trim(),email:$('#a3').value.trim(),username:$('#a4').value.trim().toLowerCase()},old=$('#a4').dataset.old;
+window.eA=id=>{const a=admins.find(x=>x.id===id);$('#a1').value=a.firstName;$('#a2').value=a.lastName;$('#a3').value=a.email;$('#a3').readOnly=!!FB;$('#a4').value=a.username;$('#a5').value='';$('#a4').dataset.old=id;scrollTo(0,document.body.scrollHeight)};
+window.dA=async id=>{if(FB)return faDel(id);if(id==='piyapsu')return setMsg('ไม่สามารถลบแอดมินหลัก (piyapsu) ได้');if(admins.length<2)return setMsg('ต้องเหลือแอดมินอย่างน้อย 1 คน');if(await askC('ยืนยันการลบแอดมิน?','ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้อีก'))try{await db.doc('admins/'+id).delete()}catch(e){setMsg('ลบไม่สำเร็จ')}};
+window.sA=async()=>{if(FB)return faSaveUser('admin','a');const a={firstName:$('#a1').value.trim(),lastName:$('#a2').value.trim(),email:$('#a3').value.trim(),username:$('#a4').value.trim().toLowerCase()},old=$('#a4').dataset.old;
  if(!a.firstName||!a.email||!a.username)return setMsg('กรุณากรอกข้อมูลให้ครบ');if(speakers.some(x=>x.username===a.username))return setMsg('Username นี้ถูกใช้แล้ว (มีในรายชื่อวิทยากร)');if(!await askC(old?'ยืนยันการบันทึกการแก้ไขแอดมิน?':'ยืนยันการเพิ่มแอดมิน?',a.firstName+' '+a.lastName+' ('+a.username+')','บันทึก',false))return;const pw=$('#a5').value||(old?null:a.username+'1234');
  if(pw)a.pw=await sha(pw);else a.pw=admins.find(x=>x.id===old).pw;
  try{await db.doc('admins/'+a.username).set(a);if(old&&old!==a.username)await db.doc('admins/'+old).delete();setMsg('บันทึกแอดมินแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
