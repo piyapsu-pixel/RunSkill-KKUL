@@ -85,14 +85,14 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r28';
+const VER='2026-10-15 r29';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec';
 const TM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],TD=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const DEF_ADMIN={id:'piyapsu',firstName:'Piyaphat',lastName:'Suwankasem',email:'piyapsu@kku.ac.th',username:'piyapsu',pw:'2bdf436177bd99a9b510050176583a132cbfb04b730573d68c5c12f74fc57092',builtin:true};
 const withDef=l=>l.some(x=>x.username==='piyapsu')?l:[DEF_ADMIN,...l];
-let users=[],FS=null,fAuth=null,faUnsub=null,formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[DEF_ADMIN],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',ai:'',from:'',to:''};
+let users=[],FS=null,fAuth=null,faUnsub=null,formCfg=null,fbDraft=[],popup=null,speakers=[],calSp='',letterFile=null,rosterFile=null,gas={},db=null,assets=null,sample=null,dl=null,events=[],admins=[DEF_ADMIN],me=null,tab='cal',cur=new Date(),selDay=null,msg='',draft={},F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,s:'',v:{},from:'',to:''};
 const MF=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const TODAY=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const fd=d=>{if(!d)return'';const[y,m,dd]=d.split('-');return `${+dd} ${TM[m-1]} ${+y+543}`};
@@ -182,7 +182,7 @@ window.delEv=async id=>{const ev=events.find(x=>x.id===id);if(!ev)return;
   {busy('กำลังลบ…');try{await db.doc('events/'+id).delete();const r=await trashFolders([ev]);popup=null;setMsg('ลบกิจกรรมแล้ว'+delNote(r))}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}}};
 window.editEv=id=>{popup=null;warmDrive();draft={...events.find(e=>e.id===id)};tab='form';msg=me?'':'กรุณาเข้าสู่ระบบแอดมินเพื่อแก้ไขกิจกรรม (แก้ไขได้เฉพาะแอดมิน)';render()};
 /* ---------- Form + AI ---------- */
-const DEF=[{k:'date',l:'วันที่จัดอบรม (เริ่ม)',t:'date',r:1,b:1},{k:'endDate',l:'วันที่สิ้นสุด',t:'date',b:1},{k:'startTime',l:'เวลาเริ่ม',t:'time',b:1},{k:'endTime',l:'เวลาสิ้นสุด',t:'time',b:1},{k:'speaker',l:'ชื่อวิทยากร',t:'text',b:1},{k:'topic',l:'หัวข้อการอบรม',t:'text',r:1,b:1},{k:'location',l:'สถานที่',t:'text',b:1},{k:'attendees',l:'จำนวนผู้เข้าร่วม (คน)',t:'number',b:1},{k:'faculty',l:'คณะ/หน่วยงานที่จัดกิจกรรม',t:'text',b:1},{k:'trainType',l:'ประเภทการอบรม',t:'select',o:['ในตาราง','นอกตาราง'],b:1},{k:'courseType',l:'ประเภทหลักสูตร',t:'select',o:['Academic Skills','Occupation Skills'],b:1},{k:'orgType',l:'ส่วนงาน',t:'select',o:['ภายใน มข.','ภายนอก มข.'],b:1},{k:'attType',l:'ประเภทผู้เข้าร่วมอบรม',t:'select',o:['นักเรียน','นักศึกษา มข.','บุคลากร มข.','บุคคลภายนอก มข.'],b:1},{k:'aiRelated',l:'เนื้อหาเกี่ยวข้องกับการใช้ AI',t:'radio',o:['ใช่','ไม่'],b:1}];
+const DEF=[{k:'date',l:'วันที่จัดอบรม (เริ่ม)',t:'date',r:1,b:1},{k:'endDate',l:'วันที่สิ้นสุด',t:'date',b:1},{k:'startTime',l:'เวลาเริ่ม',t:'time',b:1},{k:'endTime',l:'เวลาสิ้นสุด',t:'time',b:1},{k:'speaker',l:'ชื่อวิทยากร',t:'text',b:1,st:1,fl:1},{k:'topic',l:'หัวข้อการอบรม',t:'text',r:1,b:1,st:1,fl:1},{k:'location',l:'สถานที่',t:'text',b:1},{k:'attendees',l:'จำนวนผู้เข้าร่วม (คน)',t:'number',b:1},{k:'faculty',l:'คณะ/หน่วยงานที่จัดกิจกรรม',t:'text',b:1,st:1,fl:1},{k:'trainType',l:'ประเภทการอบรม',t:'select',o:['ในตาราง','นอกตาราง'],b:1,st:1,fl:1},{k:'courseType',l:'ประเภทหลักสูตร',t:'select',o:['Academic Skills','Occupation Skills'],b:1,st:1,fl:1},{k:'orgType',l:'ส่วนงาน',t:'select',o:['ภายใน มข.','ภายนอก มข.'],b:1,st:1,fl:1},{k:'attType',l:'ประเภทผู้เข้าร่วมอบรม',t:'select',o:['นักเรียน','นักศึกษา มข.','บุคลากร มข.','บุคคลภายนอก มข.'],b:1,st:1,fl:1},{k:'aiRelated',l:'เนื้อหาเกี่ยวข้องกับการใช้ AI',t:'radio',o:['ใช่','ไม่'],b:1,st:1,fl:1}];
 const LOCK=['date','endDate','speaker','attendees'];
 const cfg=()=>{const st=formCfg&&Array.isArray(formCfg.fields)&&formCfg.fields.length?formCfg.fields:null;if(!st)return DEF.map(x=>({...x}));
  const out=st.map(f=>{const d=DEF.find(x=>x.k===f.k);return d?{...d,...f,t:LOCK.includes(d.k)?d.t:(f.t||d.t),b:1}:f});DEF.forEach(d=>{if(!out.some(f=>f.k===d.k))out.push({...d})});return out};
@@ -232,9 +232,14 @@ async function bgUpload(id,o,lf,f){const folder=(o.date||'')+' '+(o.topic||''),u
  catch(e){return '⚠️ บันทึกกิจกรรมแล้ว แต่อัปโหลดไฟล์ไม่สำเร็จ: '+(e.message||e)+' — เปิดแก้ไขกิจกรรมแล้วแนบไฟล์อีกครั้ง'}}
 /* ---------- Dashboard ---------- */
 const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
+const fv=k=>(F.v&&F.v[k])||'';
+const canStat=f=>['text','select','radio'].includes(f.t);
+const statFields=()=>cfg().filter(f=>f.st&&canStat(f));
+const filtFields=()=>statFields().filter(f=>f.fl);
+const matchField=(e,k,val)=>!val||(k==='speaker'?matchSp(e,val):String(e[k]==null?'':e[k])===val);
 function filt(){return events.filter(e=>{const[y,m]=e.date.split('-').map(Number);if(F.p==='all'){}else if(F.p==='range'){if(F.from&&(e.endDate||e.date)<F.from)return false;if(F.to&&e.date>F.to)return false}else if(y!==+F.y)return false;
  if(F.p==='month'&&m-1!==+F.m)return false;if(F.p==='quarter'&&Math.floor((m-1)/3)!==+F.q)return false;
- if(F.ai&&e.aiRelated!==F.ai)return false;if(F.ot&&e.orgType!==F.ot)return false;if(F.at&&e.attType!==F.at)return false;if(F.tt&&e.trainType!==F.tt)return false;if(F.ct&&e.courseType!==F.ct)return false;if(F.fac&&e.faculty!==F.fac)return false;if(F.t&&e.topic!==F.t)return false;if(F.sp&&!matchSp(e,F.sp))return false;if(F.s&&!(e.speaker+e.topic).includes(F.s))return false;return true})}
+ for(const f of filtFields())if(!matchField(e,f.k,fv(f.k)))return false;if(F.s&&!(e.speaker+e.topic).includes(F.s))return false;return true})}
 const normN=t=>String(t||'').replace(/[\s์]/g,'').toLowerCase();
 const matchSp=(e,q)=>{const x=normN(q);return !x||spl(e.speaker).some(n=>normN(n).includes(x))};
 const calEv=()=>calSp?events.filter(e=>matchSp(e,calSp)):events;
@@ -275,8 +280,21 @@ function pieSvg(a){const t=sum(a);if(!t)return'<p class="mu">ไม่มีข�
 const stackBar=a=>{const t=sum(a);return t?`<div class="stk">${a.map(([k,v],i)=>`<i style="width:${v/t*100}%;background:${PAL[i%7]}"></i>`).join('')}</div>`+legend(a):'<p class="mu">ไม่มีข้อมูล</p>'};
 const prog=(a,mono)=>{const mx=Math.max(1,...a.map(x=>x[1]));return a.length?a.map(([k,v],i)=>`<div class="pg"><div class="pl"><span title="${esc(k)}">${esc(k)}</span><b>${v}</b></div><div class="pt"><i style="width:${v/mx*100}%;background:${PAL[mono?0:i%7]}"></i></div></div>`).join(''):'<p class="mu">ไม่มีข้อมูล</p>'};
 const shareBlock=(t,a)=>{const T=sum(a),pc=i=>a[i]&&T?Math.round(a[i][1]/T*100)+'%':'-';return `<div><div class="sub">${t}</div><div class="pc">${[0,1].map(i=>`<div><span>${pc(i)}</span><small>${a[i]?esc(a[i][0]):''}</small></div>`).join('')}</div></div>`};
-function fix(){if(!events.some(e=>(!F.fac||e.faculty===F.fac)&&(!F.t||e.topic===F.t)&&(!F.sp||matchSp(e,F.sp))))['fac','t','sp'].forEach(k=>{if(k!==F.last)F[k]=''})}
-function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r=filt();F.p=p;return r})(),sub=ex=>events.filter(e=>(ex==='fac'||!F.fac||e.faculty===F.fac)&&(ex==='t'||!F.t||e.topic===F.t)&&(ex==='sp'||!F.sp||matchSp(e,F.sp))),facs=[...new Set(sub('fac').map(e=>e.faculty).filter(Boolean))],tops=[...new Set(sub('t').map(e=>e.topic).filter(Boolean))],spks=(F.fac||F.t)?[...new Set(sub('sp').flatMap(e=>spl(e.speaker)))].sort():mergeNames(sub('sp').flatMap(e=>spl(e.speaker))),yrs=[...new Set([...events.map(e=>+e.date.slice(0,4)),new Date().getFullYear()])].sort();
+function fix(){const ff=filtFields();if(!ff.some(f=>fv(f.k)))return;if(!events.some(e=>ff.every(f=>matchField(e,f.k,fv(f.k)))))ff.forEach(f=>{if(f.k!==F.last)F.v[f.k]=''})}
+const optsFor=f=>{if(f.t==='select'||f.t==='radio')return f.o||[];const others=filtFields().filter(x=>x.k!==f.k),src=events.filter(e=>others.every(x=>matchField(e,x.k,fv(x.k))));
+ if(f.k==='speaker'){const b=src.flatMap(e=>spl(e.speaker));return others.some(x=>fv(x.k))?[...new Set(b)].sort():mergeNames(b)}
+ return [...new Set(src.map(e=>e[f.k]).filter(Boolean))].sort()};
+function chartsHtml(ev,by,byM){const sf=statFields(),icon={speaker:'🎤',topic:'📚',faculty:'🏛'};
+ const rank=sf.filter(f=>f.t==='text').map(f=>{let d,u='ครั้ง',t=f.l;
+  if(f.k==='speaker')d=byM(e=>spl(e.speaker).filter(n=>!fv('speaker')||normN(n).includes(normN(fv('speaker'))))).slice(0,8);
+  else if(f.k==='topic'){d=topicAtt(ev);u='คน';t=f.l+'ที่มีผู้เข้าร่วมมากที่สุด'}
+  else d=by(e=>e[f.k]).slice(0,8);
+  return `<div class="card"><b class="ct">${icon[f.k]||'📊'} ${esc(t)} (${u})</b>${prog(d,1)}</div>`});
+ const cards=[`<div class="card"><b class="ct">📅 จำนวนการอบรมรายเดือน</b>${monthCols(ev)}</div>`,...rank],rows=[];
+ for(let i=0;i<cards.length;i+=2)rows.push(`<div class="grid3">${cards.slice(i,i+2).join('')}</div>`);
+ const dn=sf.filter(f=>f.t==='select'||f.t==='radio').map(f=>donut(esc(f.l),by(e=>e[f.k]||'ไม่ระบุ')));
+ return rows.join('\n ')+(dn.length?`\n <div class="card"><b class="ct">สัดส่วนตามประเภท</b><div class="dgrid">${dn.join('')}</div></div>`:'')}
+function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r=filt();F.p=p;return r})(),yrs=[...new Set([...events.map(e=>+e.date.slice(0,4)),new Date().getFullYear()])].sort();
  const tot=ev.reduce((a,e)=>a+(+e.attendees||0),0),by=(f)=>{const o={};ev.forEach(e=>{const k=f(e)||'-';o[k]=(o[k]||0)+1});return Object.entries(o).sort((a,b)=>b[1]-a[1])};
  const byM=f=>{const o={};ev.forEach(e=>f(e).forEach(k=>o[k]=(o[k]||0)+1));return Object.entries(o).sort((a,b)=>b[1]-a[1])};const bars=a=>{const mx=Math.max(1,...a.map(x=>x[1]));return a.slice(0,10).map(([k,v])=>`<div class="bar"><span style="width:140px">${esc(k)}</span><i style="width:${v/mx*50}%"></i>${v}</div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'};
  const per=F.p==='all'?'ทุกช่วงเวลา':F.p==='range'?`${fd(F.from)||'…'} – ${fd(F.to)||'…'}`:F.p==='month'?`${TM[F.m]} ${+F.y+543}`:F.p==='quarter'?`ไตรมาส ${+F.q+1} ปี ${+F.y+543}`:`ปี ${+F.y+543}`;
@@ -286,24 +304,19 @@ function vDash(){fix();const ev=filt(),evAll=(()=>{const p=F.p;F.p='all';const r
  <select id="fm" class="${F.p==='month'?'':'hide'}">${TM.map((t,i)=>`<option value="${i}">${t}</option>`).join('')}</select>
  <select id="fq" class="${F.p==='quarter'?'':'hide'}">${[0,1,2,3].map(i=>`<option value="${i}">Q${i+1} (${TM[i*3]}–${TM[i*3+2]})</option>`).join('')}</select>
  <label class="${F.p==='range'?'':'hide'}" style="display:flex;gap:6px;align-items:center">ตั้งแต่<input type="date" id="fa" style="margin:0">ถึง<input type="date" id="fb" style="margin:0"></label>
- ${[['orgType','ot'],['attType','at'],['aiRelated','ai']].map(([k,id])=>{const f=cfg().find(x=>x.k===k)||{},ai=k==='aiRelated';return `<select id="f${id}"><option value="">${ai?'เนื้อหา AI: ทั้งหมด':'ทุก'+esc(f.l||k)}</option>${(f.o||[]).map(v=>`<option value="${esc(v)}">${ai?'เนื้อหา AI: ':''}${esc(v)}</option>`).join('')}</select>`}).join('')}
- <select id="ftt"><option value="">ทุกประเภทการอบรม</option><option>ในตาราง</option><option>นอกตาราง</option></select>
- <select id="fct"><option value="">ทุกประเภทหลักสูตร</option><option>Academic Skills</option><option>Occupation Skills</option></select>
- <select id="ff"><option value="">ทุกคณะ/หน่วยงาน</option>${facs.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
- <select id="ft"><option value="">ทุกหัวข้อ</option>${tops.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
- <select id="fsp"><option value="">วิทยากรทุกคน</option>${spks.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
+ ${filtFields().map(f=>{const sl=f.t==='select'||f.t==='radio',all=f.k==='speaker'?'วิทยากรทุกคน':sl?f.l+': ทั้งหมด':'ทุก'+f.l;return `<select id="flt_${f.k}" style="max-width:300px"><option value="">${esc(all)}</option>${optsFor(f).map(v=>`<option value="${esc(v)}">${sl?esc(f.l)+': ':''}${esc(v)}</option>`).join('')}</select>`}).join('')}
  <input id="fs" placeholder="ค้นหาวิทยากร/หัวข้อ" value="${esc(F.s)}">
  <button onclick="clrF()" title="ล้างตัวกรองทั้งหมด">↺ ล้างตัวกรอง</button>
  <button class="dx" onclick="xl()">⬇ ดาว์โหลด Excel</button><button class="dp" onclick="pdf()">⬇ ดาว์โหลด PDF</button></div></div>
  <div id="rep">${kpis(ev,tot)}
  <div class="card"><b class="ct">📈 เปรียบเทียบจำนวนการอบรมรายปี</b>${yearCols(evAll)}</div>
- <div class="grid3"><div class="card"><b class="ct">📅 จำนวนการอบรมรายเดือน</b>${monthCols(ev)}</div><div class="card"><b class="ct">🏛 คณะ/หน่วยงานที่จัด (ครั้ง)</b>${prog(by(e=>e.faculty).slice(0,8),1)}</div></div>
- <div class="grid3"><div class="card"><b class="ct">🎤 วิทยากร (ครั้ง)</b>${prog(byM(e=>spl(e.speaker).filter(n=>!F.sp||normN(n).includes(normN(F.sp)))).slice(0,8),1)}</div><div class="card"><b class="ct">📚 หัวข้อที่มีผู้เข้าร่วมมากที่สุด (คน)</b>${prog(topicAtt(ev),1)}</div></div>
- <div class="card"><b class="ct">สัดส่วนตามประเภท</b><div class="dgrid">${donut('ประเภทการอบรม',by(e=>e.trainType||'ไม่ระบุ'))}${donut('ประเภทหลักสูตร',by(e=>e.courseType||'ไม่ระบุ'))}${donut('ส่วนงาน',by(e=>e.orgType||'ไม่ระบุ'))}${donut('ประเภทผู้เข้าร่วม',by(e=>e.attType||'ไม่ระบุ'))}${donut('เนื้อหาเกี่ยวกับ AI',by(e=>e.aiRelated||'ไม่ระบุ'))}</div></div>
+ ${chartsHtml(ev,by,byM)}
  <div class="card"><div><div><b class="ct">กิจกรรมล่าสุด · ${per}</b>${ev.slice().sort((x,y)=>y.date.localeCompare(x.date)).slice(0,6).map(e=>`<div class="li"><b>${fd(e.date)}</b><br><span>${esc(e.topic)}</span></div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'}</div></div></div>
  <div class="card tw"><table><tr><th>วันที่</th><th>เวลา</th><th>หัวข้อ</th><th>วิทยากร</th><th>สถานที่</th><th>จำนวน</th><th>หน่วยงาน</th><th>ประเภทการอบรม</th><th>หลักสูตร</th></tr>${ev.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<tr><td>${fd(e.date)}</td><td>${esc(e.startTime?e.startTime+(e.endTime?'–'+e.endTime:''):'')}</td><td>${esc(e.topic)}</td><td>${esc(e.speaker)}</td><td>${esc(e.location)}</td><td>${esc(e.attendees)}</td><td>${esc(e.faculty)}</td><td>${esc(e.trainType)}</td><td>${esc(e.courseType)}</td></tr>`).join('')}</table></div></div>`}
-function bindDash(){[['fp','p'],['fy','y'],['fm','m'],['fq','q'],['ff','fac'],['ft','t'],['fsp','sp'],['ftt','tt'],['fot','ot'],['fat','at'],['fai','ai'],['fct','ct'],['fa','from'],['fb','to']].forEach(([i,k])=>{const el=$('#'+i);el.value=F[k];el.onchange=()=>{F[k]=el.value;F.last=k;render()}});const s=$('#fs');s.onchange=()=>{F.s=s.value;render()}}
-window.clrF=()=>{F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,fac:'',s:'',t:'',sp:'',tt:'',ct:'',ot:'',at:'',ai:'',from:'',to:''};render()};
+function bindDash(){[['fp','p'],['fy','y'],['fm','m'],['fq','q'],['fa','from'],['fb','to']].forEach(([i,k])=>{const el=$('#'+i);el.value=F[k];el.onchange=()=>{F[k]=el.value;F.last=k;render()}});
+ filtFields().forEach(f=>{const el=$('#flt_'+f.k);if(!el)return;el.value=fv(f.k);el.onchange=()=>{F.v[f.k]=el.value;F.last=f.k;render()}});
+ const s=$('#fs');s.onchange=()=>{F.s=s.value;render()}}
+window.clrF=()=>{F={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,s:'',v:{},from:'',to:''};render()};
 window.xl=async()=>{const ev=filt().map(e=>({'วันที่':fd(e.date),'เวลา':e.startTime?e.startTime+(e.endTime?'–'+e.endTime:''):'','หัวข้อ':e.topic,'วิทยากร':e.speaker,'สถานที่':e.location,'จำนวนผู้เข้าร่วม':+e.attendees||0,'หน่วยงาน':e.faculty,'ประเภทการอบรม':e.trainType||'','ประเภทหลักสูตร':e.courseType||'','ส่วนงาน':e.orgType||'','ประเภทผู้เข้าร่วม':e.attType||'','เนื้อหาเกี่ยวกับ AI':e.aiRelated||'',...Object.fromEntries(cfg().filter(f=>!f.b&&!f.h).map(f=>[f.l,e[f.k]||''])),'หมายเหตุ':e.notes||''}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(ev),'สรุป');
  try{await dl.save({filename:'สรุปกิจกรรม.xlsx',data:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])})}catch(e){setMsg('ดาวน์โหลดไม่สำเร็จ: '+(e.code||e.message))}};
@@ -333,14 +346,16 @@ window.pdf=async()=>{setMsg('กำลังสร้าง PDF…');
  catch(e){setMsg('สร้าง PDF ไม่สำเร็จ: '+(e&&(e.message||e.code)||e))}};
 /* ---------- Form builder ---------- */
 function vFb(){const T=[['text','ข้อความสั้น'],['textarea','ข้อความยาว'],['number','ตัวเลข'],['date','วันที่'],['time','เวลา'],['select','Dropdown'],['radio','ปุ่มเลือก (ติ๊ก)']];
- return `<div class="card"><h3>แก้ไขแบบฟอร์มจัดการอบรม</h3><p class="mu">ปรับชื่อช่อง ลำดับ ซ่อน/แสดง บังคับกรอก และเพิ่มช่องข้อมูลใหม่ได้ ช่องที่มาจากระบบ (🔒) ลบไม่ได้แต่ซ่อนได้ ช่อง "ชื่อวิทยากร" เพิ่มทีละคนเสมอ การเปลี่ยนจะมีผลเมื่อกด "บันทึกแบบฟอร์ม"</p>
+ return `<div class="card"><h3>แก้ไขแบบฟอร์มจัดการอบรม</h3><p class="mu">ปรับชื่อช่อง ลำดับ ซ่อน/แสดง บังคับกรอก และเพิ่มช่องข้อมูลใหม่ได้ ช่องที่มาจากระบบ (🔒) ลบไม่ได้แต่ซ่อนได้ ช่อง "ชื่อวิทยากร" เพิ่มทีละคนเสมอ ติ๊ก "แสดงสถิติที่หน้า Dashboard" เพื่อให้ช่องนั้นมีกราฟสรุป และติ๊ก "เพิ่มตัวกรองที่หน้า Dashboard" เพื่อกรองข้อมูลตามช่องนั้น (รองรับเฉพาะชนิดข้อความสั้น Dropdown และปุ่มเลือก) การเปลี่ยนจะมีผลเมื่อกด "บันทึกแบบฟอร์ม"</p>
  ${fbDraft.map((f,i)=>`<div class="fbr"><div class="row" style="flex-wrap:nowrap"><div style="display:flex;gap:4px"><button onclick="fbMv(${i},-1)">↑</button><button onclick="fbMv(${i},1)">↓</button></div>
  <input value="${esc(f.l)}" oninput="fbSet(${i},'l',this.value)" style="flex:1;min-width:0"><select onchange="fbSet(${i},'t',this.value,1)" ${LOCK.includes(f.k)?'disabled title="ชนิดของช่องนี้ถูกล็อก เพราะระบบใช้คำนวณ"':''}>${T.map(([v,n])=>`<option value="${v}" ${f.t===v?'selected':''}>${n}</option>`).join('')}</select></div>
  <div class="row" style="margin-top:8px"><label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.r?'checked':''} onchange="fbSet(${i},'r',this.checked)" style="width:auto;margin:0">บังคับกรอก</label>
  <label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.h?'':'checked'} onchange="fbSet(${i},'h',!this.checked)" style="width:auto;margin:0">แสดงในฟอร์ม</label>
+ ${canStat(f)?`<label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.st?'checked':''} onchange="fbSt(${i},this.checked)" style="width:auto;margin:0">แสดงสถิติที่หน้า Dashboard</label>${f.st?`<label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.fl?'checked':''} onchange="fbSet(${i},'fl',this.checked)" style="width:auto;margin:0">เพิ่มตัวกรองที่หน้า Dashboard</label>`:''}`:'<span class="mu">(ชนิดนี้ไม่รองรับสถิติ)</span>'}
  ${f.b?`<span class="mu">${LOCK.includes(f.k)?'🔒 ช่องระบบ (ชนิดคงที่)':'ช่องระบบ (ลบไม่ได้)'}</span>`:`<button onclick="fbDel(${i})">🗑 ลบช่อง</button>`}</div>
  ${(f.t==='select'||f.t==='radio')?`<div style="margin-top:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">ตัวเลือก</div>${(f.o||[]).map((v,j)=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="mu" style="width:24px;text-align:right">${j+1}.</span><input value="${esc(v)}" placeholder="ตัวเลือกที่ ${j+1}" oninput="fbOpt(${i},${j},this.value)" style="flex:1;min-width:0"><button onclick="fbOptDel(${i},${j})" title="ลบตัวเลือกนี้">✕</button></div>`).join('')}<button onclick="fbOptAdd(${i})">➕ เพิ่มตัวเลือก</button></div>`:''}</div>`).join('')}
  <div class="row" style="margin-top:12px"><button onclick="fbAdd()">➕ เพิ่มช่องข้อมูล</button><button onclick="fbReset()">↺ คืนค่าเริ่มต้น</button><button class="p" onclick="fbSave()">บันทึกแบบฟอร์ม</button></div></div>`}
+window.fbSt=(i,on)=>{fbDraft[i].st=on;if(!on)fbDraft[i].fl=false;render()};
 window.fbSet=(i,k,v,re)=>{fbDraft[i][k]=v;if(k==='t'&&(v==='select'||v==='radio')&&!(fbDraft[i].o||[]).length)fbDraft[i].o=['ตัวเลือก 1','ตัวเลือก 2'];if(re)render()};
 window.fbOpt=(i,j,v)=>{fbDraft[i].o[j]=v};
 window.fbOptAdd=i=>{(fbDraft[i].o=fbDraft[i].o||[]).push('');render();const r=document.querySelectorAll('.fbr')[i];if(r){const x=[...r.querySelectorAll('input[oninput^="fbOpt("]')].pop();if(x)x.focus()}};
