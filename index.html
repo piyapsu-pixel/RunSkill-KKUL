@@ -85,7 +85,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r30';
+const VER='2026-10-15 r31';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec';
@@ -429,7 +429,6 @@ function vClinic(){const c=ccfg(),d=cld,isA=me&&me.role==='admin';
  <label>วันที่ขอใช้บริการ *<input id="cl_date" type="date" value="${esc(d.date||TODAY())}"></label></div><br>
  <div class="mu" style="font-size:13px;margin-bottom:6px">เวลาที่ขอใช้บริการ *</div><div class="row" style="gap:22px">${c.slots.map(v=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);font-size:15px;margin:0"><input type="radio" name="cl_slot" value="${esc(v)}" ${d.slot===v?'checked':''} style="width:auto;margin:0">${esc(v)}</label>`).join('')}</div><br>
  <div class="mu" style="font-size:13px;margin-bottom:6px">เครื่องมือที่ขอคำแนะนำ * (เลือกได้หลายรายการ)</div><div class="row" style="gap:10px 22px">${c.tools.map(v=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);font-size:15px;margin:0"><input type="checkbox" name="cl_tool" value="${esc(v)}" ${(d.tools||[]).includes(v)?'checked':''} style="width:auto;margin:0">${esc(v)}</label>`).join('')}</div><br>
- ${chk('cl_consent',d.consent,'ผู้รับบริการยินยอมให้ข้อมูลนี้ดำเนินการภายใต้นโยบายคุ้มครองข้อมูลส่วนบุคคล มหาวิทยาลัยขอนแก่น *')}${chk('cl_ack',d.ack,'รับทราบ: ให้บริการ Onsite ตามวันและเวลาที่ระบุเท่านั้น เป็นการใช้เครื่องมือ Generative AI ด้วยตนเอง มิใช่การอบรม *')}<br>
  <button class="p" onclick="saveClinic()">${clEditId?'บันทึกการแก้ไข':'บันทึก'}</button> <button onclick="clReset()">ล้างฟอร์ม</button></div>
  <div class="card"><div class="row" style="margin-bottom:10px"><h3 style="margin:0;flex:1;min-width:200px">รายชื่อผู้รับบริการ (${rows.length})</h3><input id="cl_q" placeholder="ค้นหาชื่อ / อีเมล / สังกัด / เครื่องมือ" value="${esc(clQ)}" onchange="clQ=this.value;render()"><button onclick="clStaffXl()">⬇ Excel (มีข้อมูลส่วนบุคคล)</button></div>
  <div class="tw"><table><tr><th>วันที่</th><th>เวลา</th><th>ชื่อ-สกุล</th><th>E-mail</th><th>สถานภาพ</th><th>สังกัด</th><th>เครื่องมือ</th><th></th></tr>${shown.map(r=>{const p=clinicPII[r.id]||{};return `<tr><td>${fd(r.date)}</td><td>${esc(r.slot)}</td><td>${esc(p.name)}</td><td>${esc(p.email)}</td><td>${esc(stF(r))}</td><td>${esc(afF(r))}</td><td>${esc((r.tools||[]).join(', '))}</td><td style="white-space:nowrap"><button onclick="clEdit('${r.id}')">แก้ไข</button> <button onclick="clDel('${r.id}')">ลบ</button></td></tr>`}).join('')||'<tr><td colspan="8" class="mu">ยังไม่มีข้อมูล</td></tr>'}</table></div>
@@ -444,18 +443,18 @@ window.ccSave=async()=>{const o={};for(const k of ['status','affil','tools','slo
  try{await db.doc('settings/clinic').set(o);ccDraft=null;setMsg('บันทึกการตั้งค่าแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
 window.clReset=()=>{cld={};clEditId=null;render()};
 window.clEdit=id=>{const r=clinic.find(x=>x.id===id);if(!r)return;const p=clinicPII[id]||{},c=ccfg(),[st,stT]=unOth(r.status,r.statusT,c.status),[af,afT]=unOth(r.affil,r.affilT,c.affil);
- cld={name:p.name||'',email:p.email||'',phone:p.phone||'',status:st,statusT:stT,affil:af,affilT:afT,date:r.date,slot:r.slot,tools:r.tools||[],consent:true,ack:true};clEditId=id;render();scrollTo(0,0)};
+ cld={name:p.name||'',email:p.email||'',phone:p.phone||'',status:st,statusT:stT,affil:af,affilT:afT,date:r.date,slot:r.slot,tools:r.tools||[]};clEditId=id;render();scrollTo(0,0)};
 window.clDel=async id=>{const r=clinic.find(x=>x.id===id);if(!r)return;const p=clinicPII[id]||{};
  if(!await askC('ยืนยันการลบข้อมูลผู้รับบริการ?',(p.name||'')+' · '+fd(r.date)+'\nการลบไม่สามารถย้อนกลับได้'))return;busy('กำลังลบ…');
  try{await Promise.all([db.doc('clinic/'+id).delete(),db.doc('clinicPII/'+id).delete()]);if(clEditId===id){cld={};clEditId=null}setMsg('ลบข้อมูลแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}};
 window.saveClinic=async()=>{if(saving)return;const g=i=>$('#'+i).value.trim(),sl=document.querySelector('input[name="cl_slot"]:checked'),tools=[...document.querySelectorAll('input[name="cl_tool"]:checked')].map(x=>x.value);
- const v={name:g('cl_name'),email:g('cl_email'),phone:g('cl_phone'),status:$('#cl_status').value,statusT:g('cl_statusT'),affil:$('#cl_affil').value,affilT:g('cl_affilT'),date:$('#cl_date').value,slot:sl?sl.value:'',tools,consent:$('#cl_consent').checked,ack:$('#cl_ack').checked};
- const miss=[];if(!v.name)miss.push('ชื่อ-สกุล');if(!v.email)miss.push('E-mail');if(!v.status||(v.status===OTH&&!v.statusT))miss.push('สถานภาพ');if(!v.affil||(v.affil===OTH&&!v.affilT))miss.push('สังกัด');if(!v.date)miss.push('วันที่');if(!v.slot)miss.push('เวลา');if(!tools.length)miss.push('เครื่องมือ');if(!v.consent)miss.push('การยินยอม');if(!v.ack)miss.push('การรับทราบ');
+ const v={name:g('cl_name'),email:g('cl_email'),phone:g('cl_phone'),status:$('#cl_status').value,statusT:g('cl_statusT'),affil:$('#cl_affil').value,affilT:g('cl_affilT'),date:$('#cl_date').value,slot:sl?sl.value:'',tools};
+ const miss=[];if(!v.name)miss.push('ชื่อ-สกุล');if(!v.email)miss.push('E-mail');if(!v.status||(v.status===OTH&&!v.statusT))miss.push('สถานภาพ');if(!v.affil||(v.affil===OTH&&!v.affilT))miss.push('สังกัด');if(!v.date)miss.push('วันที่');if(!v.slot)miss.push('เวลา');if(!tools.length)miss.push('เครื่องมือ');
  if(miss.length){cld=v;return setMsg('กรุณากรอก/เลือก: '+miss.join(', '))}
  if(!await askC(clEditId?'ยืนยันการบันทึกการแก้ไข?':'ยืนยันการบันทึกผู้รับบริการ?',v.name+' · '+fd(v.date)+' · '+v.slot,'บันทึก',false)){cld=v;return render()}
  saving=true;busy('กำลังบันทึก…');
  try{const id=clEditId||('c'+Date.now()),old=clinic.find(x=>x.id===id)||{},pub={date:v.date,slot:v.slot,status:v.status===OTH?'อื่น ๆ':v.status,statusT:v.status===OTH?v.statusT:'',affil:v.affil===OTH?'อื่น ๆ':v.affil,affilT:v.affil===OTH?v.affilT:'',tools:v.tools,createdAt:old.createdAt||new Date().toISOString(),by:old.by||(me?me.username:'')};
-  await Promise.all([db.doc('clinic/'+id).set(pub),db.doc('clinicPII/'+id).set({name:v.name,email:v.email,phone:v.phone,consent:true,ack:true})]);cld={};clEditId=null;setMsg('บันทึกข้อมูลผู้รับบริการแล้ว')}
+  await Promise.all([db.doc('clinic/'+id).set(pub),db.doc('clinicPII/'+id).set({name:v.name,email:v.email,phone:v.phone})]);cld={};clEditId=null;setMsg('บันทึกข้อมูลผู้รับบริการแล้ว')}
  catch(e){cld=v;setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}finally{saving=false;busy(false)}};
 /* ---------- Users (admin / speaker / both) ---------- */
 const isAdm=u=>!!u&&u.role==='admin';
