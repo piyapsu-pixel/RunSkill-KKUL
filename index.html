@@ -85,7 +85,7 @@ body.nosb #side{margin-left:-268px}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* ===== ตั้งค่า Google Drive (ขั้นตอนที่ 1) — วาง URL ของ Apps Script Web app (ลงท้าย /exec) และ Token ที่ตั้งใน Code.gs ===== */
 /* ===== ตั้งค่า Firebase (ขั้นตอนที่ 2) — วาง firebaseConfig ที่ได้จาก Firebase Console แทน null เช่น {apiKey:'...',authDomain:'...',projectId:'...',appId:'...'} ===== */
-const VER='2026-10-15 r31';
+const VER='2026-10-15 r32';
 const FB_CFG={apiKey:"AIzaSyCCGpmmaR9pJPXe13qgxH4Y61hAxEPQHQ0",authDomain:"kkul-runskill.firebaseapp.com",projectId:"kkul-runskill",storageBucket:"kkul-runskill.firebasestorage.app",messagingSenderId:"785736636018",appId:"1:785736636018:web:3c16deadaa3370f42e94eb"},BOOT_EMAIL='piyapsu@kku.ac.th';
 let FB=typeof firebase!=='undefined'&&!!FB_CFG;
 const DRIVE_API='https://script.google.com/macros/s/AKfycbzSzQ7ELJSqa9DhwlwIM5s6j1j38i-elqa0t293q6bIO8sWb5CcnuprDnI_epEoNBx1/exec';
@@ -107,7 +107,7 @@ async function init(){
  if(db){try{db.collection('events').onSnapshot(s=>{events=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{msg='อ่านข้อมูลกิจกรรมไม่ได้: '+(e.message||e.code);render()});
   db.collection('clinic').onSnapshot(s=>{clinic=s.docs.map(d=>({id:d.id,...d.data()}));render()},()=>{});
   if(!FB){db.collection('clinicPII').onSnapshot(s=>{clinicPII={};s.docs.forEach(d=>clinicPII[d.id]=d.data());render()},()=>{});setUsers(withDef([]));db.collection('users').onSnapshot(s=>{setUsers(withDef(s.docs.map(d=>({id:d.id,...d.data()}))));render()})}
-  db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;const cc=s.docs.find(x=>x.id==='clinic');clCfgDoc=cc?cc.data():null;render()},()=>{})}catch(e){}}
+  db.collection('settings').onSnapshot(s=>{const d=s.docs.find(x=>x.id==='form');formCfg=d?d.data():null;const cc=s.docs.find(x=>x.id==='clinic');clCfgDoc=cc?cc.data():null;const cf=s.docs.find(x=>x.id==='clinicForm');clFormCfg=cf?cf.data():null;render()},()=>{})}catch(e){}}
  if(!db)msg=FB_CFG?(typeof firebase==='undefined'?'⚠️ โหลด Firebase SDK ไม่สำเร็จ — ตรวจอินเทอร์เน็ตหรือตัวบล็อกโฆษณา แล้วกด Ctrl+F5':'⚠️ เชื่อมต่อ Firebase ไม่สำเร็จ'):'⚠️ ยังไม่ได้เปิดใช้ฐานข้อมูล — ไฟล์นี้ยังไม่มีค่า FB_CFG (กรุณาอัปโหลดไฟล์เวอร์ชันล่าสุดขึ้น GitHub แล้วกด Ctrl+F5)';
  render()}
 /* ---------- Firebase auth ---------- */
@@ -123,12 +123,12 @@ async function faUser(u){if(!u)return;
   render()}catch(e){try{await fAuth.signOut()}catch(x){}setMsg('เข้าสู่ระบบไม่สำเร็จ: '+(e.message||e.code))}}
 window.resetPw=async email=>{if(!await askC('ส่งอีเมลรีเซ็ตรหัสผ่าน?','ส่งลิงก์ไปที่ '+email,'ส่งอีเมล',false))return;try{await fAuth.sendPasswordResetEmail(email);setMsg('ส่งลิงก์รีเซ็ตรหัสผ่านไปที่ '+email+' แล้ว')}catch(e){setMsg('ส่งไม่สำเร็จ: '+(e.message||e.code))}};
 function render(){
- $('#nav').innerHTML=`<div class="grp">ภาพรวม<small>ปฏิทินและสรุปข้อมูล</small></div>${nb('cal','📅','ปฏิทิน')}${nb('dash','📊','Dashboard การอบรม')}${nb('cdash','🤖','Dashboard AI Clinic')}<div class="grp">จัดการ<small>แอดมินและวิทยากร</small></div>${nb('form','📝','จัดการอบรม',1)}${nb('clinic','🤖','จัดการบริการ AI Clinic',1)}${me&&me.role!=='admin'?'':`<div class="grp">ผู้ดูแลระบบ<small>เฉพาะแอดมิน</small></div>${nb('usr','👥','จัดการผู้ใช้งาน',1)}${nb('bulk','📋','แก้ไข/ลบหลายรายการ',1)}${nb('fb','🛠','แก้ไขแบบฟอร์ม',1)}`}`;
+ $('#nav').innerHTML=`<div class="grp">ภาพรวม<small>ปฏิทินและสรุปข้อมูล</small></div>${nb('cal','📅','ปฏิทิน')}${nb('dash','📊','Dashboard การอบรม')}${nb('cdash','🤖','Dashboard AI Clinic')}<div class="grp">จัดการ<small>แอดมินและวิทยากร</small></div>${nb('form','📝','จัดการอบรม',1)}${nb('clinic','🤖','จัดการบริการ AI Clinic',1)}${me&&me.role!=='admin'?'':`<div class="grp">ผู้ดูแลระบบ<small>เฉพาะแอดมิน</small></div>${nb('usr','👥','จัดการผู้ใช้งาน',1)}${nb('bulk','📋','แก้ไข/ลบหลายรายการ',1)}${nb('fb','🛠','แก้ไขแบบฟอร์มจัดการอบรม',1)}${nb('cfb','🛠','แก้ไขแบบฟอร์ม AI Clinic',1)}`}`;
  $('#who').innerHTML=me?`<div class="av">${esc((me.firstName||'?')[0])}${esc((me.lastName||'')[0]||'')}</div><b>${esc(me.firstName)} ${esc(me.lastName)}</b><small>${permName(me)} · ${esc(me.email)}</small>${FB?`<button onclick="resetPw('${esc(me.email)}')" style="margin-top:8px;font-size:12px;padding:5px 10px">🔑 ส่งอีเมลเปลี่ยนรหัสผ่าน</button>`:''}`:`<div class="av">👤</div><b>ผู้เยี่ยมชม</b><small>ดูปฏิทินและสรุปข้อมูล</small>`;$('#dt').textContent=fd(TODAY());$('#lg').textContent=me?'ออกจากระบบ':'เข้าสู่ระบบ';$('#lg').onclick=me?()=>{if(fAuth){fAuth.signOut();if(faUnsub)faUnsub();if(faUnsub2)faUnsub2();clinicPII={};setUsers([])}me=null;tab='cal';render()}:()=>{tab='login';render()};
- const adT=tab==='usr'||tab==='fb'||tab==='bulk';if(me&&me.role!=='admin'&&adT){tab='cal';msg='เมนูนี้สำหรับแอดมินเท่านั้น'}const need=(tab==='form'||tab==='clinic'||adT)&&!me;if(need)tab='login';$('#pt').textContent={cal:'ปฏิทินกิจกรรม',dash:'Dashboard การอบรม',cdash:'Dashboard AI Clinic',clinic:'จัดการบริการ AI Clinic',form:'จัดการอบรม',usr:'จัดการผู้ใช้งาน',bulk:'แก้ไข/ลบหลายรายการ',fb:'แก้ไขแบบฟอร์ม',login:'เข้าสู่ระบบ'}[tab];
- $('#m').innerHTML=(tab==='cal'||tab==='dash'?hero():'')+(msg?`<div class="msg">${esc(msg)}</div>`:'')+({cal:vCal,dash:vDash,form:vForm,usr:vUsers,bulk:vBulk,fb:vFb,clinic:vClinic,cdash:vCDash,login:vLogin}[tab])();
+ const adT=tab==='usr'||tab==='fb'||tab==='cfb'||tab==='bulk';if(me&&me.role!=='admin'&&adT){tab='cal';msg='เมนูนี้สำหรับแอดมินเท่านั้น'}const need=(tab==='form'||tab==='clinic'||adT)&&!me;if(need)tab='login';$('#pt').textContent={cal:'ปฏิทินกิจกรรม',dash:'Dashboard การอบรม',cdash:'Dashboard AI Clinic',clinic:'จัดการบริการ AI Clinic',form:'จัดการอบรม',usr:'จัดการผู้ใช้งาน',bulk:'แก้ไข/ลบหลายรายการ',fb:'แก้ไขแบบฟอร์มจัดการอบรม',cfb:'แก้ไขแบบฟอร์ม AI Clinic',login:'เข้าสู่ระบบ'}[tab];
+ $('#m').innerHTML=(tab==='cal'||tab==='dash'?hero():'')+(msg?`<div class="msg">${esc(msg)}</div>`:'')+({cal:vCal,dash:vDash,form:vForm,usr:vUsers,bulk:vBulk,fb:vFb,cfb:vFb,clinic:vClinic,cdash:vCDash,login:vLogin}[tab])();
  if(tab==='dash')bindDash();if(tab==='cdash')bindCDash()}
-window.go=k=>{tab=k;msg='';popup=null;if(k==='form')warmDrive();if(k==='fb')fbDraft=JSON.parse(JSON.stringify(cfg()));document.body.classList.remove('sbo');render()};
+window.go=k=>{tab=k;msg='';popup=null;if(k==='form')warmDrive();if(k==='fb'){fbMode='form';fbDraft=JSON.parse(JSON.stringify(cfg()))}if(k==='cfb'){fbMode='clinic';fbDraft=JSON.parse(JSON.stringify(ccf()))}document.body.classList.remove('sbo');render()};
 /* ---------- Login ---------- */
 function vLogin(){return `<div class="card" style="max-width:380px;margin:auto"><h3>เข้าสู่ระบบ</h3><p class="mu">สำหรับแอดมินและวิทยากร — ใช้จัดการอบรม (เฉพาะแอดมินจัดการวิทยากรและแอดมินได้)</p>
 <label>Username<input id="lu" autocomplete="username"></label><br><label>Password<input id="lp" type="password" autocomplete="current-password"></label><br><button class="p" onclick="doLogin()">เข้าสู่ระบบ</button></div>`}
@@ -235,7 +235,7 @@ async function bgUpload(id,o,lf,f){const folder=(o.date||'')+' '+(o.topic||''),u
 /* ---------- Dashboard ---------- */
 const spl=s=>String(s||'').split(/[,،、]|และ/).map(x=>x.trim()).filter(Boolean);
 const fv=k=>(F.v&&F.v[k])||'';
-const canStat=f=>['text','select','radio'].includes(f.t);
+const canStat=f=>['text','select','radio','checks'].includes(f.t)&&!f.pii;
 const statFields=()=>cfg().filter(f=>f.st&&canStat(f));
 const filtFields=()=>statFields().filter(f=>f.fl);
 const matchField=(e,k,val)=>!val||(k==='speaker'?matchSp(e,val):String(e[k]==null?'':e[k])===val);
@@ -347,29 +347,31 @@ window.pdf=async fn=>{setMsg('กำลังสร้าง PDF…');
  await dl.save({filename:(typeof fn==='string'&&fn)||'สรุปกิจกรรม.pdf',data:p.output('blob')});setMsg('สร้างไฟล์ PDF แล้ว ('+pages.length+' หน้า A4 แนวนอน)')}
  catch(e){setMsg('สร้าง PDF ไม่สำเร็จ: '+(e&&(e.message||e.code)||e))}};
 /* ---------- Form builder ---------- */
-function vFb(){const T=[['text','ข้อความสั้น'],['textarea','ข้อความยาว'],['number','ตัวเลข'],['date','วันที่'],['time','เวลา'],['select','Dropdown'],['radio','ปุ่มเลือก (ติ๊ก)']];
- return `<div class="card"><h3>แก้ไขแบบฟอร์มจัดการอบรม</h3><p class="mu">ปรับชื่อช่อง ลำดับ ซ่อน/แสดง บังคับกรอก และเพิ่มช่องข้อมูลใหม่ได้ ช่องที่มาจากระบบ (🔒) ลบไม่ได้แต่ซ่อนได้ ช่อง "ชื่อวิทยากร" เพิ่มทีละคนเสมอ ติ๊ก "แสดงสถิติที่หน้า Dashboard" เพื่อให้ช่องนั้นมีกราฟสรุป และติ๊ก "เพิ่มตัวกรองที่หน้า Dashboard" เพื่อกรองข้อมูลตามช่องนั้น (รองรับเฉพาะชนิดข้อความสั้น Dropdown และปุ่มเลือก) การเปลี่ยนจะมีผลเมื่อกด "บันทึกแบบฟอร์ม"</p>
+let fbMode='form';
+const fbLock=()=>fbMode==='clinic'?CLOCK:LOCK,fbDefs=()=>fbMode==='clinic'?CDEF():DEF;
+function vFb(){const cl=fbMode==='clinic',T=[['text','ข้อความสั้น'],['textarea','ข้อความยาว'],['number','ตัวเลข'],['date','วันที่'],['time','เวลา'],['select','Dropdown'],['radio','ปุ่มเลือก (ติ๊ก)'],...(cl?[['checks','ติ๊กเลือกได้หลายข้อ']]:[])];
+ return `<div class="card"><h3>${cl?'แก้ไขแบบฟอร์ม AI Clinic':'แก้ไขแบบฟอร์มจัดการอบรม'}</h3><p class="mu">ปรับชื่อช่อง ลำดับ ซ่อน/แสดง บังคับกรอก และเพิ่มช่องข้อมูลใหม่ได้ ช่องที่มาจากระบบ (🔒) ลบไม่ได้แต่ซ่อนได้ ช่อง "ชื่อวิทยากร" เพิ่มทีละคนเสมอ ติ๊ก "แสดงสถิติที่หน้า Dashboard" เพื่อให้ช่องนั้นมีกราฟสรุป และติ๊ก "เพิ่มตัวกรองที่หน้า Dashboard" เพื่อกรองข้อมูลตามช่องนั้น (รองรับเฉพาะชนิดข้อความสั้น Dropdown และปุ่มเลือก) การเปลี่ยนจะมีผลเมื่อกด "บันทึกแบบฟอร์ม"</p>
  ${fbDraft.map((f,i)=>`<div class="fbr"><div class="row" style="flex-wrap:nowrap"><div style="display:flex;gap:4px"><button onclick="fbMv(${i},-1)">↑</button><button onclick="fbMv(${i},1)">↓</button></div>
- <input value="${esc(f.l)}" oninput="fbSet(${i},'l',this.value)" style="flex:1;min-width:0"><select onchange="fbSet(${i},'t',this.value,1)" ${LOCK.includes(f.k)?'disabled title="ชนิดของช่องนี้ถูกล็อก เพราะระบบใช้คำนวณ"':''}>${T.map(([v,n])=>`<option value="${v}" ${f.t===v?'selected':''}>${n}</option>`).join('')}</select></div>
+ <input value="${esc(f.l)}" oninput="fbSet(${i},'l',this.value)" style="flex:1;min-width:0"><select onchange="fbSet(${i},'t',this.value,1)" ${fbLock().includes(f.k)?'disabled title="ชนิดของช่องนี้ถูกล็อก เพราะระบบใช้คำนวณ"':''}>${T.map(([v,n])=>`<option value="${v}" ${f.t===v?'selected':''}>${n}</option>`).join('')}</select></div>
  <div class="row" style="margin-top:8px"><label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.r?'checked':''} onchange="fbSet(${i},'r',this.checked)" style="width:auto;margin:0">บังคับกรอก</label>
  <label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.h?'':'checked'} onchange="fbSet(${i},'h',!this.checked)" style="width:auto;margin:0">แสดงในฟอร์ม</label>
  ${canStat(f)?`<label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.st?'checked':''} onchange="fbSt(${i},this.checked)" style="width:auto;margin:0">แสดงสถิติที่หน้า Dashboard</label>${f.st?`<label style="display:flex;gap:6px;align-items:center;color:var(--tx)"><input type="checkbox" ${f.fl?'checked':''} onchange="fbSet(${i},'fl',this.checked)" style="width:auto;margin:0">เพิ่มตัวกรองที่หน้า Dashboard</label>`:''}`:'<span class="mu">(ชนิดนี้ไม่รองรับสถิติ)</span>'}
- ${f.b?`<span class="mu">${LOCK.includes(f.k)?'🔒 ช่องระบบ (ชนิดคงที่)':'ช่องระบบ (ลบไม่ได้)'}</span>`:`<button onclick="fbDel(${i})">🗑 ลบช่อง</button>`}</div>
- ${(f.t==='select'||f.t==='radio')?`<div style="margin-top:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">ตัวเลือก</div>${(f.o||[]).map((v,j)=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="mu" style="width:24px;text-align:right">${j+1}.</span><input value="${esc(v)}" placeholder="ตัวเลือกที่ ${j+1}" oninput="fbOpt(${i},${j},this.value)" style="flex:1;min-width:0"><button onclick="fbOptDel(${i},${j})" title="ลบตัวเลือกนี้">✕</button></div>`).join('')}<button onclick="fbOptAdd(${i})">➕ เพิ่มตัวเลือก</button></div>`:''}</div>`).join('')}
+ ${f.b?`<span class="mu">${fbLock().includes(f.k)?'🔒 ช่องระบบ (ชนิดคงที่)':'ช่องระบบ (ลบไม่ได้)'}</span>`:`<button onclick="fbDel(${i})">🗑 ลบช่อง</button>`}</div>
+ ${(f.t==='select'||f.t==='radio'||f.t==='checks')?`<div style="margin-top:10px"><div class="mu" style="font-size:13px;margin-bottom:6px">ตัวเลือก</div>${(f.o||[]).map((v,j)=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="mu" style="width:24px;text-align:right">${j+1}.</span><input value="${esc(v)}" placeholder="ตัวเลือกที่ ${j+1}" oninput="fbOpt(${i},${j},this.value)" style="flex:1;min-width:0"><button onclick="fbOptDel(${i},${j})" title="ลบตัวเลือกนี้">✕</button></div>`).join('')}<button onclick="fbOptAdd(${i})">➕ เพิ่มตัวเลือก</button>${cl&&f.t==='select'?`<label style="display:flex;gap:6px;align-items:center;color:var(--tx);margin-top:8px"><input type="checkbox" ${f.oth?'checked':''} onchange="fbSet(${i},'oth',this.checked)" style="width:auto;margin:0">มีตัวเลือก "อื่น ๆ (ระบุ)" ให้พิมพ์เอง</label>`:''}</div>`:''}</div>`).join('')}
  <div class="row" style="margin-top:12px"><button onclick="fbAdd()">➕ เพิ่มช่องข้อมูล</button><button onclick="fbReset()">↺ คืนค่าเริ่มต้น</button><button class="p" onclick="fbSave()">บันทึกแบบฟอร์ม</button></div></div>`}
 window.fbSt=(i,on)=>{fbDraft[i].st=on;if(!on)fbDraft[i].fl=false;render()};
-window.fbSet=(i,k,v,re)=>{fbDraft[i][k]=v;if(k==='t'&&(v==='select'||v==='radio')&&!(fbDraft[i].o||[]).length)fbDraft[i].o=['ตัวเลือก 1','ตัวเลือก 2'];if(re)render()};
+window.fbSet=(i,k,v,re)=>{fbDraft[i][k]=v;if(k==='t'&&(v==='select'||v==='radio'||v==='checks')&&!(fbDraft[i].o||[]).length)fbDraft[i].o=['ตัวเลือก 1','ตัวเลือก 2'];if(re)render()};
 window.fbOpt=(i,j,v)=>{fbDraft[i].o[j]=v};
 window.fbOptAdd=i=>{(fbDraft[i].o=fbDraft[i].o||[]).push('');render();const r=document.querySelectorAll('.fbr')[i];if(r){const x=[...r.querySelectorAll('input[oninput^="fbOpt("]')].pop();if(x)x.focus()}};
 window.fbOptDel=(i,j)=>{fbDraft[i].o.splice(j,1);render()};
 window.fbMv=(i,d)=>{const j=i+d;if(j<0||j>=fbDraft.length)return;[fbDraft[i],fbDraft[j]]=[fbDraft[j],fbDraft[i]];render()};
 window.fbDel=async i=>{if(await askC('ลบช่องข้อมูลนี้?','ข้อมูลที่เคยบันทึกไว้ในช่องนี้ยังอยู่ แต่จะไม่แสดงในฟอร์ม')){fbDraft.splice(i,1);render()}};
 window.fbAdd=()=>{fbDraft.push({k:'x'+Date.now().toString(36),l:'ช่องข้อมูลใหม่',t:'text'});render()};
-window.fbReset=async()=>{if(await askC('คืนค่าเริ่มต้น?','ช่องที่เพิ่มเองจะหายจากฟอร์ม (ยังไม่บันทึกจนกว่าจะกดบันทึกแบบฟอร์ม)','คืนค่า')){fbDraft=DEF.map(x=>({...x,o:x.o?[...x.o]:undefined}));render()}};
-window.fbSave=async()=>{if(!await askC('ยืนยันการบันทึกแบบฟอร์ม?','การเปลี่ยนแปลงจะมีผลกับทุกคนที่ใช้ฟอร์มจัดการอบรม','บันทึก',false))return;try{fbDraft.forEach(f=>{if(f.o)f.o=f.o.map(x=>String(x).trim()).filter(Boolean)});await db.doc('settings/form').set({fields:JSON.parse(JSON.stringify(fbDraft))});setMsg('บันทึกแบบฟอร์มแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
+window.fbReset=async()=>{if(await askC('คืนค่าเริ่มต้น?','ช่องที่เพิ่มเองจะหายจากฟอร์ม (ยังไม่บันทึกจนกว่าจะกดบันทึกแบบฟอร์ม)','คืนค่า')){fbDraft=fbDefs().map(x=>({...x,o:x.o?[...x.o]:undefined}));render()}};
+window.fbSave=async()=>{if(!await askC('ยืนยันการบันทึกแบบฟอร์ม?','การเปลี่ยนแปลงจะมีผลกับทุกคนที่ใช้ฟอร์ม','บันทึก',false))return;try{fbDraft.forEach(f=>{if(f.o)f.o=f.o.map(x=>String(x).trim()).filter(Boolean)});await db.doc('settings/'+(fbMode==='clinic'?'clinicForm':'form')).set({fields:JSON.parse(JSON.stringify(fbDraft))});setMsg('บันทึกแบบฟอร์มแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
 /* ---------- AI Clinic ---------- */
 let clinic=[],clinicPII={},clCfgDoc=null,cld={},clEditId=null,clQ='',clAll=false,ccOpen=false,ccDraft=null,faUnsub2=null;
-let CF={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,from:'',to:'',status:'',affil:'',slot:'',tool:''};
+let CF={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,from:'',to:'',v:{}};
 const OTH='__other';
 const CL_DEF={status:['นักศึกษาปริญญาตรี','นักศึกษาปริญญาโท','นักศึกษาปริญญาเอก','อาจารย์','บุคลากร','นักเรียน','บุคลากรภายนอก'],
  affil:['คณะเกษตรศาสตร์','คณะวิศวกรรมศาสตร์','คณะวิทยาศาสตร์','คณะเทคโนโลยี','คณะสถาปัตยกรรมศาสตร์','คณะวิทยาศาสตร์ประยุกต์และวิศวกรรมศาสตร์ (วิทยาเขตหนองคาย)','คณะพยาบาลศาสตร์','คณะแพทยศาสตร์','คณะเทคนิคการแพทย์','คณะสาธารณสุขศาสตร์','คณะทันตแพทยศาสตร์','คณะเภสัชศาสตร์','คณะสัตวแพทยศาสตร์','คณะศึกษาศาสตร์','คณะมนุษยศาสตร์และสังคมศาสตร์','คณะบริหารธุรกิจและการบัญชี','คณะศิลปกรรมศาสตร์','คณะนิติศาสตร์','คณะสังคมศาสตร์บูรณาการ (วิทยาเขตหนองคาย)','คณะบริหารธุรกิจ (วิทยาเขตหนองคาย)','คณะศิลปศาสตร์ (วิทยาเขตหนองคาย)','คณะเศรษฐศาสตร์','วิทยาลัยการปกครองท้องถิ่น','วิทยาลัยนานาชาติ','วิทยาลัยบัณฑิตศึกษาการจัดการ (MBA)','วิทยาลัยการคอมพิวเตอร์','บัณฑิตวิทยาลัย','ศูนย์/สำนัก/สถาบันใน มข.','หน่วยงานภายนอก มข.'],
@@ -383,78 +385,90 @@ function perHtml(P,S,yrs){return `<select id="${P}p"><option value="all">ทั�
  <select id="${P}q" class="${S.p==='quarter'?'':'hide'}">${[0,1,2,3].map(i=>`<option value="${i}">Q${i+1} (${TM[i*3]}–${TM[i*3+2]})</option>`).join('')}</select>
  <label class="${S.p==='range'?'':'hide'}" style="display:flex;gap:6px;align-items:center">ตั้งแต่<input type="date" id="${P}a" style="margin:0">ถึง<input type="date" id="${P}b" style="margin:0"></label>`}
 function bindPer(P,S){[['p','p'],['y','y'],['m','m'],['q','q'],['a','from'],['b','to']].forEach(([i,k])=>{const el=$('#'+P+i);if(!el)return;el.value=S[k];el.onchange=()=>{S[k]=el.value;render()}})}
+const CLOCK=['name','email','phone','date','tools'];
+let clFormCfg=null;
+const CDEF=()=>{const c=ccfg();return[
+ {k:'name',l:'ชื่อ-สกุล',t:'text',r:1,pii:1,b:1},{k:'email',l:'E-mail',t:'text',r:1,pii:1,b:1},{k:'phone',l:'เบอร์โทรศัพท์',t:'text',pii:1,b:1},
+ {k:'status',l:'สถานภาพ',t:'select',o:[...c.status],oth:1,r:1,st:1,fl:1,b:1},{k:'affil',l:'สังกัด',t:'select',o:[...c.affil],oth:1,r:1,st:1,fl:1,b:1},
+ {k:'date',l:'วันที่ขอใช้บริการ',t:'date',r:1,b:1},{k:'slot',l:'เวลาที่ขอใช้บริการ',t:'radio',o:[...c.slots],r:1,st:1,fl:1,b:1},
+ {k:'tools',l:'เครื่องมือที่ขอคำแนะนำ',t:'checks',o:[...c.tools],r:1,st:1,fl:1,b:1}]};
+const ccf=()=>{const st=clFormCfg&&Array.isArray(clFormCfg.fields)&&clFormCfg.fields.length?clFormCfg.fields:null,D=CDEF();if(!st)return D;
+ const out=st.map(f=>{const d=D.find(x=>x.k===f.k);return d?{...d,...f,t:CLOCK.includes(d.k)?d.t:(f.t||d.t),b:1,pii:d.pii,...(d.k==='date'?{h:false,r:1}:{})}:f});
+ D.forEach(d=>{if(!out.some(f=>f.k===d.k))out.push({...d})});return out};
+const valOf=(f,r,p)=>f.pii?p[f.k]:(r[f.k]!==undefined?r[f.k]:p[f.k]);
+const valStr=(f,r,p)=>{const v=valOf(f,r,p),t=r[f.k+'T']!==undefined?r[f.k+'T']:p[f.k+'T'];if(Array.isArray(v))return v.join(', ');if(v==null||v==='')return '';return (f.t==='date'?fd(v):String(v))+(f.oth&&t?' ('+t+')':'')};
+const cStat=()=>ccf().filter(f=>f.st&&canStat(f)),cFilt=()=>cStat().filter(f=>f.fl),cv=k=>(CF.v&&CF.v[k])||'';
+const cMatch=(r,k,val)=>!val||(Array.isArray(r[k])?r[k].includes(val):String(r[k]==null?'':r[k])===val);
 function cfilt(skipP){return clinic.filter(r=>{const d=r.date||'';if(!d)return false;const[y,m]=d.split('-').map(Number),p=skipP?'all':CF.p;
  if(p==='range'){if(CF.from&&d<CF.from)return false;if(CF.to&&d>CF.to)return false}else if(p!=='all'&&y!==+CF.y)return false;
  if(p==='month'&&m-1!==+CF.m)return false;if(p==='quarter'&&Math.floor((m-1)/3)!==+CF.q)return false;
- if(CF.status&&r.status!==CF.status)return false;if(CF.affil&&r.affil!==CF.affil)return false;if(CF.slot&&r.slot!==CF.slot)return false;if(CF.tool&&!(r.tools||[]).includes(CF.tool))return false;return true})}
-const stF=r=>r.status+(r.statusT?' ('+r.statusT+')':''),afF=r=>r.affil+(r.affilT?' ('+r.affilT+')':'');
-function vCDash(){const c=ccfg(),rows=cfilt(),all=cfilt(true),yrs=[...new Set([...clinic.map(r=>+(r.date||'').slice(0,4)).filter(Boolean),new Date().getFullYear()])].sort();
- const cnt=f=>{const o={};rows.forEach(r=>[].concat(f(r)).forEach(k=>{if(k)o[k]=(o[k]||0)+1}));return Object.entries(o).sort((a,b)=>b[1]-a[1])};
- const tools=cnt(r=>r.tools||[]),aff=cnt(r=>r.affil),sta=cnt(r=>r.status),slot=cnt(r=>r.slot),nT=rows.reduce((t,r)=>t+(r.tools||[]).length,0);
+ for(const f of cFilt())if(!cMatch(r,f.k,cv(f.k)))return false;return true})}
+function vCDash(){const rows=cfilt(),all=cfilt(true),yrs=[...new Set([...clinic.map(r=>+(r.date||'').slice(0,4)).filter(Boolean),new Date().getFullYear()])].sort(),sf=cStat(),ff=cFilt();
+ const cnt=f=>{const o={};rows.forEach(r=>[].concat(f(r)).forEach(k=>{if(k!=null&&k!=='')o[k]=(o[k]||0)+1}));return Object.entries(o).sort((a,b)=>b[1]-a[1])};
+ const aff=cnt(r=>r.affil),sta=cnt(r=>r.status),nT=rows.reduce((t,r)=>t+(r.tools||[]).length,0);
  const per=CF.p==='all'?'ทุกช่วงเวลา':CF.p==='range'?`${fd(CF.from)||'…'} – ${fd(CF.to)||'…'}`:CF.p==='month'?`${TM[CF.m]} ${+CF.y+543}`:CF.p==='quarter'?`ไตรมาส ${+CF.q+1} ปี ${+CF.y+543}`:`ปี ${+CF.y+543}`;
  const mo=colsHtml(TM.map((t,i)=>[t,rows.filter(r=>+(r.date||'').slice(5,7)-1===i).length,true])),wd=colsHtml(WD.map((t,i)=>[t,rows.filter(r=>r.date&&new Date(r.date+'T00:00:00').getDay()===i).length,true]));
  const cy=new Date().getFullYear(),ys=all.map(r=>+r.date.slice(0,4)),lo=ys.length?Math.min(...ys):cy,hi=Math.max(...ys,cy),hl=(CF.p==='all'||CF.p==='range')?cy:+CF.y,yr=[];for(let y=lo;y<=hi;y++)yr.push([y,all.filter(r=>+r.date.slice(0,4)===y).length]);
- const cur=yr.find(x=>x[0]===hl)||[hl,0],prev=yr.find(x=>x[0]===hl-1),dd=cur[1]-(prev?prev[1]:0),avg=(yr.reduce((t,x)=>t+x[1],0)/yr.length).toFixed(1);
- const sel=(id,ph,list,extra)=>`<select id="${id}"><option value="">${ph}</option>${list.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('')}${extra?'<option value="อื่น ๆ">อื่น ๆ</option>':''}</select>`;
- const mx=(a,i)=>a[0]?esc(a[0][0]):'-';
- return `<div class="card"><div class="row">${perHtml('cl',CF,yrs)}
- ${sel('clst','สถานภาพ: ทั้งหมด',c.status,1)}${sel('claf','สังกัด: ทั้งหมด',c.affil,1)}${sel('clsl','เวลา: ทั้งหมด',c.slots)}${sel('cltl','เครื่องมือ: ทั้งหมด',c.tools)}
+ const cur=yr.find(x=>x[0]===hl)||[hl,0],prev=yr.find(x=>x[0]===hl-1),dd=cur[1]-(prev?prev[1]:0),avg=(yr.reduce((t,x)=>t+x[1],0)/yr.length).toFixed(1),mx=a=>a[0]?esc(a[0][0]):'-';
+ const optsC=f=>['select','radio','checks'].includes(f.t)?[...(f.o||[]),...(f.oth?['อื่น ๆ']:[])]:[...new Set(clinic.map(r=>r[f.k]).filter(Boolean))].sort();
+ const fsel=ff.map(f=>{const sl=f.t!=='text';return `<select id="cfl_${f.k}" style="max-width:300px"><option value="">${esc(sl?f.l+': ทั้งหมด':'ทุก'+f.l)}</option>${optsC(f).map(v=>`<option value="${esc(v)}">${sl?esc(f.l)+': ':''}${esc(v)}</option>`).join('')}</select>`}).join('');
+ const icon={tools:'🛠',affil:'🏛'},rank=[],dn=[];
+ sf.forEach(f=>{const d=cnt(r=>r[f.k]);if(f.t==='checks'||f.t==='text'||(f.o||[]).length>8)rank.push(`<div class="card"><b class="ct">${icon[f.k]||'📊'} ${esc(f.l)} (ครั้ง)</b>${prog(d.slice(0,8),1)}</div>`);else dn.push(donut(esc(f.l),d))});
+ const rrows=[];for(let i=0;i<rank.length;i+=2)rrows.push(`<div class="grid3">${rank.slice(i,i+2).join('')}</div>`);
+ return `<div class="card"><div class="row">${perHtml('cl',CF,yrs)}${fsel}
  <button onclick="clrCF()">↺ ล้างตัวกรอง</button><button class="dx" onclick="clXl()">⬇ ดาวน์โหลด Excel</button><button class="dp" onclick="pdf('สถิติ AI Clinic.pdf')">⬇ ดาวน์โหลด PDF</button></div></div>
  <div id="rep"><div class="card"><b class="ct">🤖 สถิติบริการ AI Clinic · ${per}</b></div>
  <div class="kpis">${kpi('การใช้บริการ','#3b82f6',rows.length,'ครั้ง','ช่วงเช้า: <b>'+rows.filter(r=>(r.slot||'').startsWith('08')).length+'</b> · ช่วงบ่าย: <b>'+rows.filter(r=>(r.slot||'').startsWith('13')).length+'</b>')}${kpi('เครื่องมือที่ขอคำแนะนำ','#ef4444',nT,'รายการ','เฉลี่ย/ครั้ง: <b>'+(rows.length?(nT/rows.length).toFixed(1):0)+'</b>')}${kpi('สังกัด','#f59e0b',aff.length,'สังกัด','ยอดนิยม: <b>'+mx(aff)+'</b>')}${kpi('สถานภาพ','#22c55e',sta.length,'กลุ่ม','ยอดนิยม: <b>'+mx(sta)+'</b>')}</div>
  <div class="card"><b class="ct">📈 เปรียบเทียบจำนวนการใช้บริการรายปี</b>${colsHtml(yr.map(([y,n])=>[`<b>${y+543}</b>`,n,y===hl]))}<div class="mu" style="margin-top:10px">ปี ${hl+543}: <b>${cur[1]}</b> ครั้ง ${prev?`(${dd>0?'▲ +'+dd:dd<0?'▼ '+dd:'เท่าเดิม'} จากปี ${hl+542}) `:''}· เฉลี่ย ${avg} ครั้ง/ปี · แท่งสีเข้ม = ปีที่เลือก</div></div>
  <div class="grid3"><div class="card"><b class="ct">📅 จำนวนการใช้บริการรายเดือน</b>${mo}</div><div class="card"><b class="ct">🗓 วันที่มาใช้บริการ (ตามวันในสัปดาห์)</b>${wd}</div></div>
- <div class="grid3"><div class="card"><b class="ct">🛠 เครื่องมือที่ขอคำแนะนำ (ครั้ง)</b>${prog(tools.slice(0,8),1)}</div><div class="card"><b class="ct">🏛 สังกัด (ครั้ง)</b>${prog(aff.slice(0,8),1)}</div></div>
- <div class="card"><b class="ct">สัดส่วนผู้ใช้บริการ</b><div class="dgrid">${donut('สถานภาพ',sta)}${donut('ช่วงเวลา',slot)}</div></div>
- <div class="card"><b class="ct">การใช้บริการล่าสุด · ${per}</b>${rows.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,6).map(r=>`<div class="li"><b>${fd(r.date)}</b> · ${esc(r.slot)}<br><span>${esc((r.tools||[]).join(', '))}</span></div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'}</div></div>`}
-function bindCDash(){bindPer('cl',CF);[['clst','status'],['claf','affil'],['clsl','slot'],['cltl','tool']].forEach(([i,k])=>{const el=$('#'+i);if(el){el.value=CF[k];el.onchange=()=>{CF[k]=el.value;render()}}})}
-window.clrCF=()=>{CF={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,from:'',to:'',status:'',affil:'',slot:'',tool:''};render()};
-window.clXl=async()=>{try{const rows=cfilt().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>({'วันที่':fd(r.date),'เวลา':r.slot,'สถานภาพ':stF(r),'สังกัด':afF(r),'เครื่องมือ':(r.tools||[]).join(', ')}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'AI Clinic');
+ ${rrows.join('\n ')}
+ ${dn.length?`<div class="card"><b class="ct">สัดส่วนผู้ใช้บริการ</b><div class="dgrid">${dn.join('')}</div></div>`:''}
+ <div class="card"><b class="ct">การใช้บริการล่าสุด · ${per}</b>${rows.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,6).map(r=>`<div class="li"><b>${fd(r.date)}</b>${r.slot?' · '+esc(r.slot):''}<br><span>${esc((r.tools||[]).join(', '))}</span></div>`).join('')||'<p class="mu">ไม่มีข้อมูล</p>'}</div></div>`}
+function bindCDash(){bindPer('cl',CF);cFilt().forEach(f=>{const el=$('#cfl_'+f.k);if(el){el.value=cv(f.k);el.onchange=()=>{CF.v[f.k]=el.value;render()}}})}
+window.clrCF=()=>{CF={p:'all',y:new Date().getFullYear(),m:new Date().getMonth(),q:0,from:'',to:'',v:{}};render()};
+window.clXl=async()=>{try{const fs=ccf().filter(f=>!f.pii&&(f.b||f.st));const rows=cfilt().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>{const o={};fs.forEach(f=>o[f.l]=valStr(f,r,{}));return o});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'AI Clinic');
  await dl.save({filename:'สถิติ AI Clinic.xlsx',data:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])});toast('✅ ดาวน์โหลดแล้ว',3000)}catch(e){toast('⚠️ '+(e.message||e),5000)}};
-window.clStaffXl=async()=>{try{const rows=clinic.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(r=>{const p=clinicPII[r.id]||{};return{'วันที่':fd(r.date),'เวลา':r.slot,'ชื่อ-สกุล':p.name||'','E-mail':p.email||'','เบอร์โทรศัพท์':p.phone||'','สถานภาพ':stF(r),'สังกัด':afF(r),'เครื่องมือ':(r.tools||[]).join(', ')}});
+window.clStaffXl=async()=>{try{const fs=ccf();const rows=clinic.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(r=>{const p=clinicPII[r.id]||{},o={};fs.forEach(f=>o[f.l]=valStr(f,r,p));return o});
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'ผู้รับบริการ');await dl.save({filename:'รายชื่อผู้รับบริการ AI Clinic.xlsx',data:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])});toast('✅ ดาวน์โหลดแล้ว (มีข้อมูลส่วนบุคคล กรุณาเก็บรักษาอย่างปลอดภัย)',5000)}catch(e){toast('⚠️ '+(e.message||e),5000)}};
 /* staff page */
 const unOth=(val,txt,list)=>(!val?['','']:(val==='อื่น ๆ'||!list.includes(val))?[OTH,txt||(val==='อื่น ๆ'?'':val)]:[val,'']);
 window.clOth=id=>{const t=$('#'+id+'T');if(t)t.classList.toggle('hide',$('#'+id).value!==OTH)};
-function vClinic(){const c=ccfg(),d=cld,isA=me&&me.role==='admin';
- const sOpt=(list,cur)=>`<option value="">— เลือก —</option>`+list.map(v=>`<option value="${esc(v)}" ${cur===v?'selected':''}>${esc(v)}</option>`).join('')+`<option value="${OTH}" ${cur===OTH?'selected':''}>อื่น ๆ (ระบุ)</option>`;
- const chk=(id,on,t)=>`<label style="display:flex;gap:8px;align-items:flex-start;color:var(--tx);font-size:14px;margin:6px 0"><input type="checkbox" id="${id}" ${on?'checked':''} style="width:auto;margin:3px 0 0">${t}</label>`;
- const rows=clinic.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||'')).filter(r=>{if(!clQ)return true;const p=clinicPII[r.id]||{};return normN([p.name,p.email,afF(r),stF(r),(r.tools||[]).join(' ')].join(' ')).includes(normN(clQ))}),shown=clAll?rows:rows.slice(0,30);
- if(isA&&!ccDraft)ccDraft=JSON.parse(JSON.stringify(c));
- const lists=[['status','สถานภาพ'],['affil','สังกัด'],['tools','เครื่องมือที่ให้คำแนะนำ'],['slots','ช่วงเวลาให้บริการ']];
+function vClinic(){const d=cld,fs=ccf(),vis=fs.filter(f=>!f.h);
+ const sOpt=(list,cur,oth)=>`<option value="">— เลือก —</option>`+list.map(v=>`<option value="${esc(v)}" ${cur===v?'selected':''}>${esc(v)}</option>`).join('')+(oth?`<option value="${OTH}" ${cur===OTH?'selected':''}>อื่น ๆ (ระบุ)</option>`:'');
+ const lab=f=>esc(f.l)+(f.r?' *':'')+(f.t==='checks'?' (เลือกได้หลายรายการ)':'');
+ const blk=(f,inner)=>`<div style="margin:6px 0 12px"><div class="mu" style="font-size:13px;margin-bottom:6px">${lab(f)}</div><div class="row" style="gap:10px 22px">${inner}</div></div>`;
+ const opt=(type,k,v,on)=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);font-size:15px;margin:0"><input type="${type}" name="clf_${k}" value="${esc(v)}" ${on?'checked':''} style="width:auto;margin:0">${esc(v)}</label>`;
+ const comp=f=>{const k=f.k,v=d[k];
+  if(f.t==='select')return `<label>${lab(f)}<select id="clf_${k}" onchange="clOth('clf_${k}')">${sOpt(f.o||[],v,f.oth)}</select>${f.oth?`<input id="clf_${k}T" class="${v===OTH?'':'hide'}" placeholder="ระบุ" value="${esc(d[k+'T'])}" style="margin-top:6px">`:''}</label>`;
+  if(f.t==='textarea')return `<label>${lab(f)}<textarea id="clf_${k}" rows="2">${esc(v)}</textarea></label>`;
+  return `<label>${lab(f)}<input id="clf_${k}" type="${f.t==='text'?(k==='email'?'email':'text'):f.t}" value="${esc(k==='date'&&!v?TODAY():v)}"></label>`};
+ let body='',buf='';const flush=()=>{if(buf){body+=`<div class="grid">${buf}</div>`;buf=''}};
+ vis.forEach(f=>{if(f.t==='radio'){flush();body+=blk(f,(f.o||[]).map(v=>opt('radio',f.k,v,d[f.k]===v)).join(''))}else if(f.t==='checks'){flush();body+=blk(f,(f.o||[]).map(v=>opt('checkbox',f.k,v,(d[f.k]||[]).includes(v))).join(''))}else buf+=comp(f)});flush();
+ const rows=clinic.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||'')).filter(r=>{if(!clQ)return true;const p=clinicPII[r.id]||{};return normN(fs.map(f=>valStr(f,r,p)).join(' ')).includes(normN(clQ))}),shown=clAll?rows:rows.slice(0,30);
+ const cols=['date','slot','name','email','status','affil','tools'].map(k=>vis.find(f=>f.k===k)).filter(Boolean),extras=vis.filter(f=>!f.b);
  return `<div class="card"><h3>${clEditId?'แก้ไขข้อมูลผู้รับบริการ':'บันทึกผู้เข้ารับบริการ AI Clinic'}</h3><p class="mu">อิงตามแบบฟอร์มขอใช้บริการให้คำแนะนำ AI Tools for Academic Research (ให้บริการ Onsite ที่เคาน์เตอร์บริการตอบคำถาม ชั้น 2 อาคารศูนย์สารสนเทศ เป็นการใช้เครื่องมือด้วยตนเอง ไม่ใช่การอบรม)</p>
- <div class="grid"><label>ชื่อ-สกุล *<input id="cl_name" value="${esc(d.name)}"></label><label>E-mail *<input id="cl_email" type="email" value="${esc(d.email)}"></label><label>เบอร์โทรศัพท์<input id="cl_phone" value="${esc(d.phone)}"></label>
- <label>สถานภาพ *<select id="cl_status" onchange="clOth('cl_status')">${sOpt(c.status,d.status)}</select><input id="cl_statusT" class="${d.status===OTH?'':'hide'}" placeholder="ระบุสถานภาพ" value="${esc(d.statusT)}" style="margin-top:6px"></label>
- <label>สังกัด *<select id="cl_affil" onchange="clOth('cl_affil')">${sOpt(c.affil,d.affil)}</select><input id="cl_affilT" class="${d.affil===OTH?'':'hide'}" placeholder="ระบุสังกัด" value="${esc(d.affilT)}" style="margin-top:6px"></label>
- <label>วันที่ขอใช้บริการ *<input id="cl_date" type="date" value="${esc(d.date||TODAY())}"></label></div><br>
- <div class="mu" style="font-size:13px;margin-bottom:6px">เวลาที่ขอใช้บริการ *</div><div class="row" style="gap:22px">${c.slots.map(v=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);font-size:15px;margin:0"><input type="radio" name="cl_slot" value="${esc(v)}" ${d.slot===v?'checked':''} style="width:auto;margin:0">${esc(v)}</label>`).join('')}</div><br>
- <div class="mu" style="font-size:13px;margin-bottom:6px">เครื่องมือที่ขอคำแนะนำ * (เลือกได้หลายรายการ)</div><div class="row" style="gap:10px 22px">${c.tools.map(v=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);font-size:15px;margin:0"><input type="checkbox" name="cl_tool" value="${esc(v)}" ${(d.tools||[]).includes(v)?'checked':''} style="width:auto;margin:0">${esc(v)}</label>`).join('')}</div><br>
- <button class="p" onclick="saveClinic()">${clEditId?'บันทึกการแก้ไข':'บันทึก'}</button> <button onclick="clReset()">ล้างฟอร์ม</button></div>
- <div class="card"><div class="row" style="margin-bottom:10px"><h3 style="margin:0;flex:1;min-width:200px">รายชื่อผู้รับบริการ (${rows.length})</h3><input id="cl_q" placeholder="ค้นหาชื่อ / อีเมล / สังกัด / เครื่องมือ" value="${esc(clQ)}" onchange="clQ=this.value;render()"><button onclick="clStaffXl()">⬇ Excel (มีข้อมูลส่วนบุคคล)</button></div>
- <div class="tw"><table><tr><th>วันที่</th><th>เวลา</th><th>ชื่อ-สกุล</th><th>E-mail</th><th>สถานภาพ</th><th>สังกัด</th><th>เครื่องมือ</th><th></th></tr>${shown.map(r=>{const p=clinicPII[r.id]||{};return `<tr><td>${fd(r.date)}</td><td>${esc(r.slot)}</td><td>${esc(p.name)}</td><td>${esc(p.email)}</td><td>${esc(stF(r))}</td><td>${esc(afF(r))}</td><td>${esc((r.tools||[]).join(', '))}</td><td style="white-space:nowrap"><button onclick="clEdit('${r.id}')">แก้ไข</button> <button onclick="clDel('${r.id}')">ลบ</button></td></tr>`}).join('')||'<tr><td colspan="8" class="mu">ยังไม่มีข้อมูล</td></tr>'}</table></div>
- ${rows.length>30?`<div style="margin-top:10px"><button onclick="clAll=!clAll;render()">${clAll?'แสดงเฉพาะ 30 รายการล่าสุด':'แสดงทั้งหมด ('+rows.length+')'}</button></div>`:''}</div>
- ${isA?`<details class="card" ${ccOpen?'open':''} ontoggle="ccOpen=this.open"><summary style="cursor:pointer;font-weight:700">⚙ ตั้งค่ารายการตัวเลือก (เฉพาะแอดมิน)</summary><p class="mu">แก้ไขรายการสถานภาพ สังกัด เครื่องมือ และช่วงเวลาที่แสดงในฟอร์มและตัวกรอง (ข้อมูลที่บันทึกไว้แล้วไม่เปลี่ยน)</p>${lists.map(([k,t])=>`<h4 style="margin:14px 0 6px">${t}</h4>${(ccDraft[k]||[]).map((v,j)=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span class="mu" style="width:26px;text-align:right">${j+1}.</span><input value="${esc(v)}" oninput="ccSet('${k}',${j},this.value)" style="flex:1;min-width:0"><button onclick="ccDel('${k}',${j})" title="ลบ">✕</button></div>`).join('')}<button onclick="ccAdd('${k}')">➕ เพิ่มตัวเลือก</button>`).join('')}<div class="row" style="margin-top:14px"><button class="p" onclick="ccSave()">บันทึกการตั้งค่า</button><button onclick="ccReset()">↺ คืนค่าเริ่มต้น</button></div></details>`:''}`}
-window.ccSet=(k,j,v)=>{ccDraft[k][j]=v};
-window.ccAdd=k=>{ccDraft[k].push('');render()};
-window.ccDel=(k,j)=>{ccDraft[k].splice(j,1);render()};
-window.ccReset=async()=>{if(await askC('คืนค่าเริ่มต้น?','รายการตัวเลือกจะกลับเป็นชุดจากแบบฟอร์มเดิม (ยังไม่บันทึกจนกว่าจะกดบันทึกการตั้งค่า)','คืนค่า')){ccDraft=JSON.parse(JSON.stringify(CL_DEF));render()}};
-window.ccSave=async()=>{const o={};for(const k of ['status','affil','tools','slots']){o[k]=(ccDraft[k]||[]).map(x=>String(x).trim()).filter(Boolean);if(!o[k].length)return setMsg('แต่ละรายการต้องมีอย่างน้อย 1 ตัวเลือก')}
- if(!await askC('ยืนยันการบันทึกการตั้งค่า?','การเปลี่ยนมีผลกับฟอร์มและตัวกรองของทุกคน','บันทึก',false))return;
- try{await db.doc('settings/clinic').set(o);ccDraft=null;setMsg('บันทึกการตั้งค่าแล้ว')}catch(e){setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}};
+ ${body}<br><button class="p" onclick="saveClinic()">${clEditId?'บันทึกการแก้ไข':'บันทึก'}</button> <button onclick="clReset()">ล้างฟอร์ม</button></div>
+ <div class="card"><div class="row" style="margin-bottom:10px"><h3 style="margin:0;flex:1;min-width:200px">รายชื่อผู้รับบริการ (${rows.length})</h3><input id="cl_q" placeholder="ค้นหา" value="${esc(clQ)}" onchange="clQ=this.value;render()"><button onclick="clStaffXl()">⬇ Excel (มีข้อมูลส่วนบุคคล)</button></div>
+ <div class="tw"><table><tr>${cols.map(f=>`<th>${esc(f.l)}</th>`).join('')}${extras.length?'<th>รายละเอียดอื่น ๆ</th>':''}<th></th></tr>${shown.map(r=>{const p=clinicPII[r.id]||{};return `<tr>${cols.map(f=>`<td>${esc(valStr(f,r,p))}</td>`).join('')}${extras.length?`<td>${extras.map(f=>{const x=valStr(f,r,p);return x?esc(f.l)+': '+esc(x):''}).filter(Boolean).join('<br>')}</td>`:''}<td style="white-space:nowrap"><button onclick="clEdit('${r.id}')">แก้ไข</button> <button onclick="clDel('${r.id}')">ลบ</button></td></tr>`}).join('')||`<tr><td colspan="${cols.length+2}" class="mu">ยังไม่มีข้อมูล</td></tr>`}</table></div>
+ ${rows.length>30?`<div style="margin-top:10px"><button onclick="clAll=!clAll;render()">${clAll?'แสดงเฉพาะ 30 รายการล่าสุด':'แสดงทั้งหมด ('+rows.length+')'}</button></div>`:''}</div>`}
 window.clReset=()=>{cld={};clEditId=null;render()};
-window.clEdit=id=>{const r=clinic.find(x=>x.id===id);if(!r)return;const p=clinicPII[id]||{},c=ccfg(),[st,stT]=unOth(r.status,r.statusT,c.status),[af,afT]=unOth(r.affil,r.affilT,c.affil);
- cld={name:p.name||'',email:p.email||'',phone:p.phone||'',status:st,statusT:stT,affil:af,affilT:afT,date:r.date,slot:r.slot,tools:r.tools||[]};clEditId=id;render();scrollTo(0,0)};
+window.clEdit=id=>{const r=clinic.find(x=>x.id===id);if(!r)return;const p=clinicPII[id]||{};cld={};
+ ccf().forEach(f=>{const k=f.k,val=valOf(f,r,p);if(f.t==='checks')cld[k]=Array.isArray(val)?val:[];else if(f.t==='select'&&f.oth){const[a,b]=unOth(val,r[k+'T']!==undefined?r[k+'T']:p[k+'T'],f.o||[]);cld[k]=a;cld[k+'T']=b}else cld[k]=val==null?'':val});
+ clEditId=id;render();scrollTo(0,0)};
 window.clDel=async id=>{const r=clinic.find(x=>x.id===id);if(!r)return;const p=clinicPII[id]||{};
  if(!await askC('ยืนยันการลบข้อมูลผู้รับบริการ?',(p.name||'')+' · '+fd(r.date)+'\nการลบไม่สามารถย้อนกลับได้'))return;busy('กำลังลบ…');
  try{await Promise.all([db.doc('clinic/'+id).delete(),db.doc('clinicPII/'+id).delete()]);if(clEditId===id){cld={};clEditId=null}setMsg('ลบข้อมูลแล้ว')}catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}};
-window.saveClinic=async()=>{if(saving)return;const g=i=>$('#'+i).value.trim(),sl=document.querySelector('input[name="cl_slot"]:checked'),tools=[...document.querySelectorAll('input[name="cl_tool"]:checked')].map(x=>x.value);
- const v={name:g('cl_name'),email:g('cl_email'),phone:g('cl_phone'),status:$('#cl_status').value,statusT:g('cl_statusT'),affil:$('#cl_affil').value,affilT:g('cl_affilT'),date:$('#cl_date').value,slot:sl?sl.value:'',tools};
- const miss=[];if(!v.name)miss.push('ชื่อ-สกุล');if(!v.email)miss.push('E-mail');if(!v.status||(v.status===OTH&&!v.statusT))miss.push('สถานภาพ');if(!v.affil||(v.affil===OTH&&!v.affilT))miss.push('สังกัด');if(!v.date)miss.push('วันที่');if(!v.slot)miss.push('เวลา');if(!tools.length)miss.push('เครื่องมือ');
+window.saveClinic=async()=>{if(saving)return;const fs=ccf(),vis=fs.filter(f=>!f.h),v={};
+ vis.forEach(f=>{const k=f.k;if(f.t==='checks')v[k]=[...document.querySelectorAll('input[name="clf_'+k+'"]:checked')].map(x=>x.value);else if(f.t==='radio'){const x=document.querySelector('input[name="clf_'+k+'"]:checked');v[k]=x?x.value:''}
+  else{const el=$('#clf_'+k);v[k]=el?el.value.trim():'';if(f.t==='select'&&f.oth){const t=$('#clf_'+k+'T');v[k+'T']=t?t.value.trim():''}}});
+ const miss=vis.filter(f=>f.r&&(f.t==='checks'?!v[f.k].length:(!v[f.k]||(v[f.k]===OTH&&!v[f.k+'T'])))).map(f=>f.l);
  if(miss.length){cld=v;return setMsg('กรุณากรอก/เลือก: '+miss.join(', '))}
- if(!await askC(clEditId?'ยืนยันการบันทึกการแก้ไข?':'ยืนยันการบันทึกผู้รับบริการ?',v.name+' · '+fd(v.date)+' · '+v.slot,'บันทึก',false)){cld=v;return render()}
+ if(!await askC(clEditId?'ยืนยันการบันทึกการแก้ไข?':'ยืนยันการบันทึกผู้รับบริการ?',(v.name||'')+' · '+fd(v.date)+(v.slot?' · '+v.slot:''),'บันทึก',false)){cld=v;return render()}
  saving=true;busy('กำลังบันทึก…');
- try{const id=clEditId||('c'+Date.now()),old=clinic.find(x=>x.id===id)||{},pub={date:v.date,slot:v.slot,status:v.status===OTH?'อื่น ๆ':v.status,statusT:v.status===OTH?v.statusT:'',affil:v.affil===OTH?'อื่น ๆ':v.affil,affilT:v.affil===OTH?v.affilT:'',tools:v.tools,createdAt:old.createdAt||new Date().toISOString(),by:old.by||(me?me.username:'')};
-  await Promise.all([db.doc('clinic/'+id).set(pub),db.doc('clinicPII/'+id).set({name:v.name,email:v.email,phone:v.phone})]);cld={};clEditId=null;setMsg('บันทึกข้อมูลผู้รับบริการแล้ว')}
+ try{const id=clEditId||('c'+Date.now()),old=clinic.find(x=>x.id===id)||{},pub={...old},pii={...(clinicPII[id]||{})};delete pub.id;
+  vis.forEach(f=>{const k=f.k;let val=v[k],t=v[k+'T'];const isO=f.t==='select'&&f.oth;if(isO&&val===OTH)val='อื่น ๆ';else t='';const tg=f.pii?pii:((f.b||f.st)?pub:pii);tg[k]=val;if(isO)tg[k+'T']=t});
+  pub.createdAt=old.createdAt||new Date().toISOString();pub.by=old.by||(me?me.username:'');
+  await Promise.all([db.doc('clinic/'+id).set(pub),db.doc('clinicPII/'+id).set(pii)]);cld={};clEditId=null;setMsg('บันทึกข้อมูลผู้รับบริการแล้ว')}
  catch(e){cld=v;setMsg('บันทึกไม่สำเร็จ: '+(e.message||e.code))}finally{saving=false;busy(false)}};
 /* ---------- Users (admin / speaker / both) ---------- */
 const isAdm=u=>!!u&&u.role==='admin';
@@ -492,7 +506,7 @@ window.bkDel=async()=>{const ids=[...bulkSel].filter(id=>events.some(e=>e.id===i
  if(!await askC('ยืนยันการลบ '+ids.length+' กิจกรรม?','กิจกรรมที่เลือกจะถูกลบถาวร (กู้คืนได้จากไฟล์สำรองเท่านั้น)'+(DRIVE_API?'\nโฟลเดอร์ไฟล์แนบใน Google Drive ของกิจกรรมเหล่านี้จะถูกย้ายไปถังขยะด้วย':'')))return;busy('กำลังลบ…');const evs=ids.map(id=>events.find(e=>e.id===id));
  try{for(let i=0;i<ids.length;i+=15)await Promise.all(ids.slice(i,i+15).map(id=>db.doc('events/'+id).delete()));ids.forEach(i=>{bulkSel.delete(i);delete bulkAi[i]});const r=await trashFolders(evs);setMsg('ลบแล้ว '+ids.length+' กิจกรรม'+delNote(r))}
  catch(e){setMsg('ลบไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}};
-window.bkJson=async()=>{const data={app:'RunSkill-KKUL',version:VER,exportedAt:new Date().toISOString(),events:events.map(e=>({...e})),formConfig:formCfg||null,clinic:clinic.map(r=>({...r})),clinicPII:{...clinicPII},clinicConfig:clCfgDoc||null,users:users.filter(u=>!u.builtin).map(u=>{const o={...u};delete o.pw;return o})};
+window.bkJson=async()=>{const data={app:'RunSkill-KKUL',version:VER,exportedAt:new Date().toISOString(),events:events.map(e=>({...e})),formConfig:formCfg||null,clinic:clinic.map(r=>({...r})),clinicPII:{...clinicPII},clinicConfig:clCfgDoc||null,clinicForm:clFormCfg||null,users:users.filter(u=>!u.builtin).map(u=>{const o={...u};delete o.pw;return o})};
  try{await dl.save({filename:'สำรองข้อมูล_'+TODAY()+'.json',data:new Blob([JSON.stringify(data,null,1)],{type:'application/json'})});toast('✅ ดาวน์โหลดไฟล์สำรองแล้ว ('+events.length+' กิจกรรม)',4000)}catch(e){toast('⚠️ '+(e.message||e),5000)}};
 window.bkXlsx=async()=>{try{const rows=events.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(e=>{const o={...e};delete o.id;return o});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'กิจกรรมทั้งหมด');
  await dl.save({filename:'กิจกรรมทั้งหมด_'+TODAY()+'.xlsx',data:new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})])});toast('✅ ดาวน์โหลดแล้ว',3000)}catch(e){toast('⚠️ '+(e.message||e),5000)}};
@@ -503,7 +517,8 @@ window.bkRestore=async inp=>{const f=inp.files[0];inp.value='';if(!f)return;let 
  try{const list=d.events.filter(e=>e&&e.id);for(let i=0;i<list.length;i+=15)await Promise.all(list.slice(i,i+15).map(e=>{const o={...e},id=o.id;delete o.id;return db.doc('events/'+id).set(o)}));
   if(d.formConfig&&Array.isArray(d.formConfig.fields))await db.doc('settings/form').set(d.formConfig);
   if(Array.isArray(d.clinic))for(const r of d.clinic){if(!r||!r.id)continue;const o={...r},id=o.id;delete o.id;await db.doc('clinic/'+id).set(o);if(d.clinicPII&&d.clinicPII[id])await db.doc('clinicPII/'+id).set(d.clinicPII[id])}
-  if(d.clinicConfig)await db.doc('settings/clinic').set(d.clinicConfig);setMsg('กู้คืนข้อมูลแล้ว '+list.length+' กิจกรรม')}
+  if(d.clinicConfig)await db.doc('settings/clinic').set(d.clinicConfig);
+  if(d.clinicForm&&Array.isArray(d.clinicForm.fields))await db.doc('settings/clinicForm').set(d.clinicForm);setMsg('กู้คืนข้อมูลแล้ว '+list.length+' กิจกรรม')}
  catch(e){setMsg('กู้คืนไม่สำเร็จ: '+(e.message||e.code))}finally{busy(false)}};
 window.autoU=()=>{$('#u4').value=$('#u3').value.split('@')[0].toLowerCase()};
 window.eU=id=>{const a=users.find(x=>x.id===id);if(!a)return;$('#u1').value=a.firstName||'';$('#u2').value=a.lastName||'';$('#u3').value=a.email||'';$('#u3').readOnly=!!FB;$('#u4').value=a.username||'';$('#u5').value='';$('#u6').value=permOf(a);$('#u4').dataset.old=id;$('#uh').scrollIntoView()};
